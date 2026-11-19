@@ -56,6 +56,7 @@ struct VideoPlayerScreen: View {
     @Binding private var orientationSession: UUID?
     @Environment(\.dismiss) private var dismiss
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverEnabled
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @AppStorage("player.endAction") private var endAction: PlaybackEndAction = .stop
@@ -570,8 +571,11 @@ struct VideoPlayerScreen: View {
                 .buttonStyle(ChromeIconButtonStyle())
                 .accessibilityLabel("退出横屏")
                 .accessibilityIdentifier("player.fullscreenToggle")
-        } else if controller.displayGeometry?.fullscreenOrientation == .landscape && !isLandscapeInterface {
-            // Portrait and square videos already fill a phone held upright.
+        } else if controller.displayGeometry?.fullscreenOrientation == .landscape && !isLandscapeInterface
+                    && horizontalSizeClass != .regular {
+            // Portrait and square videos already fill a phone held upright. A wide
+            // screen (iPad, an unfolded iPhone Duo) already gives landscape video
+            // room, and the system may not honor a forced rotation there.
             Button(action: enterFullscreen) { DesignIcon(name: "IconRotate") }
                 .buttonStyle(ChromeIconButtonStyle())
                 .accessibilityLabel("横屏播放")
@@ -924,9 +928,9 @@ struct VideoPlayerScreen: View {
         guard isFullscreen, let scene = controller.renderView.window?.windowScene else { return }
         let manager = PlaybackOrientationManager.shared
         let orientation = controller.displayGeometry?.fullscreenOrientation
-        let onFailure: (Error) -> Void = { error in
-            controller.errorMessage = "无法调整屏幕方向：\(error.localizedDescription)"
-        }
+        // The system can decline a forced rotation (an unfolded iPhone Duo, iPad
+        // multitasking). Return to the normal layout instead of reporting an error.
+        let onFailure: (Error) -> Void = { _ in exitFullscreen() }
         if let id = orientationSession, manager.isActive(id) {
             manager.updateFullscreen(id, orientation: orientation, onFailure: onFailure)
         } else {

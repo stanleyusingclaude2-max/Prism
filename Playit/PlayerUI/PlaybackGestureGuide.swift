@@ -118,7 +118,7 @@ struct PlaybackGestureGuide: View {
         .init(id: "speed", symbol: "speedometer", title: "倍速 · 左下角",
               detail: "轻点左下角的倍速按钮，直接选择 0.25× 到 2×。不是 1× 时按钮会高亮。"),
         .init(id: "landscape", symbol: "iphone.landscape", title: "横屏 · 横向视频",
-              detail: "横向视频右下角有横屏按钮，轻点后转为横屏播放，再点一次恢复。竖向视频竖着拿手机就是全屏。"),
+              detail: "横向视频右下角有横屏按钮，轻点后转为横屏播放，再点一次恢复。竖向视频竖着拿手机就是全屏。iPad 和展开的 iPhone Duo 屏幕够宽，不显示这个按钮。"),
         .init(id: "lock", symbol: "lock", title: "锁定 · 防止误触",
               detail: "在“更多”中选择“锁定触控”，画面手势和播放控件都会停用。轻点屏幕会显示“解锁”按钮。")
     ]

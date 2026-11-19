@@ -19,3 +19,10 @@
    - `PhotoViewer.swift` 里的 `UIPageViewController` 封装。
 2. PlayitCore、PlayitTransferCore 单元测试和全部 UI 测试。
 3. [真机验收](docs/DEVICE-ACCEPTANCE.md) 中“0.3.2 图标、标志与图片性能”的 7 项，重点是上千张图片时网格滑动和看图翻页的流畅度，以及与 0.3.1 的 Instruments 对比。滑动卡顿的原因是根据代码分析定位的，本环境无法实测，修复效果以真机为准。
+
+## 0.3.2 之后：宽屏横屏按钮
+
+- 宽度为 regular 的屏幕（iPad、展开的 iPhone Duo 内屏）竖着拿时不再显示“横屏播放”按钮；普通 iPhone 不受影响。
+- 系统拒绝强制转屏时，不再弹出“无法调整屏幕方向”，而是安静地回到常规布局。
+- `assertLandscapeRotation` 在 regular 宽度下改为确认按钮不出现。
+- 同样未经编译。需在 Mac 上确认：iPhone 模拟器横屏按钮照常可用；iPad 模拟器竖屏不显示按钮；有 Xcode 27.1 后在 iPhone Duo 模拟器里验证折叠／展开时的播放。

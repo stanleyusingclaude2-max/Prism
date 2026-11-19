@@ -524,6 +524,11 @@ final class PlayitUITests: XCTestCase {
     private func assertLandscapeRotation(filename: String) {
         openVideo(filename)
         let toggle = app.buttons["player.fullscreenToggle"]
+        if app.horizontalSizeClass == .regular {
+            XCTAssertFalse(toggle.waitForExistence(timeout: 2),
+                           "Wide screens (iPad, an unfolded iPhone Duo) already give landscape video room.")
+            return
+        }
         XCTAssertTrue(toggle.waitForExistence(timeout: 5))
         toggle.tap()
         let fullscreen = app.descendants(matching: .any)["player.fullscreen"]
