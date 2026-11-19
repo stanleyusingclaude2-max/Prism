@@ -115,6 +115,8 @@ final class LibraryStore: ObservableObject {
     private let worker: LibraryWorker
     private var refreshTask: Task<Void, Never>?
     private var refreshRequestedAgain = false
+    private var importChain: Task<Void, Never>?
+    private var queuedImportBatches = 0
     private var metadataTask: Task<Void, Never>?
     private var attemptedMetadata = Set<String>()
     private var deletingFolderPaths = Set<String>()
@@ -198,19 +200,38 @@ final class LibraryStore: ObservableObject {
 
     func importFiles(_ urls: [URL]) async { await importFiles(urls, into: nil) }
 
+    /// Batches import one after another. A batch requested while another is
+    /// still copying waits its turn: picking more files from "+" or the Transfer
+    /// page, or opening a picture from the Files app, used to be dropped silently.
     func importFiles(_ urls: [URL], into folder: String?) async {
-        guard !isImporting else { return }
+        guard !urls.isEmpty else { return }
+        queuedImportBatches += 1
         isImporting = true
+        let previous = importChain
+        let batch = Task { [weak self] in
+            await previous?.value
+            guard let self else { return }
+            await performImport(urls, into: folder)
+            queuedImportBatches -= 1
+            if queuedImportBatches == 0 {
+                isImporting = false
+                importProgress = ""
+            }
+        }
+        importChain = batch
+        await batch.value
+    }
+
+    private func performImport(_ urls: [URL], into folder: String?) async {
         var failures: [String] = []
         for (index, url) in urls.enumerated() {
-            importProgress = "正在导入 \(index + 1) / \(urls.count)"
+            let waiting = queuedImportBatches - 1
+            importProgress = "正在导入 \(index + 1) / \(urls.count)" + (waiting > 0 ? "，另有 \(waiting) 批等待" : "")
             let scoped = url.startAccessingSecurityScopedResource()
             do { _ = try await worker.importFile(url, into: folder) }
             catch { failures.append("\(url.lastPathComponent)：\(error.localizedDescription)") }
             if scoped { url.stopAccessingSecurityScopedResource() }
         }
-        isImporting = false
-        importProgress = ""
         await refresh()
         if !failures.isEmpty { errorMessage = failures.joined(separator: "\n") }
     }
@@ -488,8 +509,11 @@ extension MediaItem {
             : String(format: "%d:%02d", seconds / 60, seconds % 60)
     }
     var displayResolution: String? {
-        guard let pixelWidth, let pixelHeight else { return nil }
+        guard let pixelWidth, let pixelHeight, pixelWidth > 0, pixelHeight > 0 else { return nil }
+        // A photo reads better as its pixel size than as a video-style "3024p".
+        if kind == .image { return "\(pixelWidth)×\(pixelHeight)" }
         let short = min(pixelWidth, pixelHeight)
+        if short >= 4320 { return "8K" }
         return short >= 2160 ? "4K" : "\(short)p"
     }
     var displayMetadata: String {

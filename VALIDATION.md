@@ -26,3 +26,25 @@
 - 系统拒绝强制转屏时，不再弹出“无法调整屏幕方向”，而是安静地回到常规布局。
 - `assertLandscapeRotation` 在 regular 宽度下改为确认按钮不出现。
 - 同样未经编译。需在 Mac 上确认：iPhone 模拟器横屏按钮照常可用；iPad 模拟器竖屏不显示按钮；有 Xcode 27.1 后在 iPhone Duo 模拟器里验证折叠／展开时的播放。
+
+## 上架准备与改进（0.3.2 之后）
+
+本轮在 Linux 上安装了 Swift 6.1.2，第一次真正编译并运行了两个核心包的测试；也装齐了 `openstep-parser`、FontTools、Node.js 和 ffprobe，完整运行了工程检查。
+
+已完成的检查：
+
+- `swift test --package-path Packages/PlayitCore`：147 个测试，146 个通过，1 个跳过（目录权限测试在 root 用户下无法生效，属预期）。包括 0.3.2 新增的 `MediaLibraryRepository.setMetadata(_:)` 批量写入测试。
+- `swift test --package-path Packages/PlayitTransferCore`：17 个测试全部通过。
+- `python3 scripts/validate-project.py` 完整通过（使用真正的 openstep-parser）。
+- `scripts/generate-project.py` 重新生成的工程与仓库一致；本轮唯一的工程改动是 App 的 Release 配置加入 `EXCLUDED_SOURCE_FILE_NAMES = Fixtures`。
+- 隐私清单和 Info.plist 用 plistlib 解析通过。
+- 导入排队、缩略图 key、缩略图缓存清理和分辨率显示这几段代码，抽出到单独的 Swift 文件里用 `-swift-version 5 -strict-concurrency=targeted` 编译（无警告）并运行：三批重叠的导入全部按顺序完成、没有丢失；同一文件在 App 容器路径变化后 key 不变，外部文件仍按完整路径区分；缓存超出预算时从最旧的文件开始删到预算的 3/4。
+
+iOS 部分（SwiftUI、UIKit、MPVKit）仍未编译。需要在 Mac／iPhone 上确认：
+
+1. iOS 编译通过。
+2. 中文系统界面：搜索栏“取消”、分享面板、导入文件的选择器、长按文字的菜单都显示中文；把 iPhone 语言切到英文时，这些系统界面也显示中文（与 App 文字一致）。
+3. 导入排队：从“+”导入一批较大的视频，拷贝过程中切到“传文件”页再“从文件导入”一批，两批都应入库，底部提示显示“另有 1 批等待”。
+4. 缩略图：覆盖安装新版本后，已有的缩略图第一次启动会重新生成一次（key 格式变化），之后再更新 App 不应再全部重新生成。
+5. 上传临时文件：Wi-Fi 上传一个大文件的过程中从 Xcode 停止 App，再次启动后，“文件”App 或 Xcode 的容器下载中 `Documents/.playit-incoming` 不再存在。
+6. Archive 后检查 `.app` 包内没有 `Fixtures` 目录，且 `PrivacyInfo.xcprivacy` 在包内。

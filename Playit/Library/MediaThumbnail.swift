@@ -32,13 +32,41 @@ final class ThumbnailStore: @unchecked Sendable {
         let folder = caches?.appendingPathComponent("Thumbnails", isDirectory: true)
         if let folder {
             try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+            DispatchQueue.global(qos: .utility).async { ThumbnailStore.trimDiskCache(at: folder) }
         }
         directory = folder
     }
 
-    /// Path, modification time and size identify one version of a file.
+    /// Path, modification time and size identify one version of a file. Library
+    /// files use their path inside the library: iOS may move the app's container
+    /// when the app is updated, and a key with the absolute path then missed for
+    /// every file, so all thumbnails were decoded again after each update.
     static func key(for item: MediaItem, url: URL, maxDimension: Int) -> String {
-        "\(url.path):\(item.modifiedAt.timeIntervalSince1970):\(item.byteCount):\(maxDimension)"
+        let identity = url.path.hasSuffix("/" + item.relativePath) ? item.relativePath : url.path
+        return "\(identity):\(item.modifiedAt.timeIntervalSince1970):\(item.byteCount):\(maxDimension)"
+    }
+
+    /// Thumbnails of deleted, renamed or replaced files are never read again.
+    /// Once the folder passes the budget, the oldest files go first.
+    private static let diskBudget = 256 * 1024 * 1024
+
+    private static func trimDiskCache(at folder: URL) {
+        let keys: [URLResourceKey] = [.fileSizeKey, .contentModificationDateKey]
+        guard let files = try? FileManager.default.contentsOfDirectory(
+            at: folder, includingPropertiesForKeys: keys, options: .skipsHiddenFiles) else { return }
+        var entries: [(url: URL, size: Int, date: Date)] = []
+        var total = 0
+        for file in files {
+            guard let values = try? file.resourceValues(forKeys: Set(keys)) else { continue }
+            let size = values.fileSize ?? 0
+            total += size
+            entries.append((file, size, values.contentModificationDate ?? .distantPast))
+        }
+        guard total > diskBudget else { return }
+        for entry in entries.sorted(by: { $0.date < $1.date }) {
+            guard total > diskBudget / 4 * 3 else { break }
+            if (try? FileManager.default.removeItem(at: entry.url)) != nil { total -= entry.size }
+        }
     }
 
     private func cache(for maxDimension: Int) -> NSCache<NSString, UIImage> {

@@ -32,6 +32,20 @@ final class TransferReceiver: @unchecked Sendable {
         self.onEvent = onEvent
     }
 
+    /// Partial uploads are written here and moved into the library once complete.
+    private static let incomingFolderName = ".playit-incoming"
+
+    /// An upload cut off by a crash or a forced quit leaves its partial file in a
+    /// hidden folder that neither the library nor the Files app shows, so the
+    /// space would never come back. Call this only while no receiver is running.
+    static func removeLeftoverUploads(in rootURL: URL) {
+        let incoming = rootURL.appendingPathComponent(incomingFolderName, isDirectory: true)
+        DispatchQueue.global(qos: .utility).async {
+            guard FileManager.default.fileExists(atPath: incoming.path) else { return }
+            try? FileManager.default.removeItem(at: incoming)
+        }
+    }
+
     static func availableBytes(at rootURL: URL) -> Int64 {
         let path = FileManager.default.fileExists(atPath: rootURL.path)
             ? rootURL.path : rootURL.deletingLastPathComponent().path
@@ -218,7 +232,7 @@ final class TransferReceiver: @unchecked Sendable {
                 client.reject(507, "手机剩余空间不足，请清理空间后重试。")
                 return
             }
-            let temporaryDirectory = rootURL.appendingPathComponent(".playit-incoming", isDirectory: true)
+            let temporaryDirectory = rootURL.appendingPathComponent(Self.incomingFolderName, isDirectory: true)
             try FileManager.default.createDirectory(at: temporaryDirectory, withIntermediateDirectories: true)
             let info = try temporaryDirectory.resourceValues(forKeys: [.isSymbolicLinkKey])
             guard info.isSymbolicLink != true else {

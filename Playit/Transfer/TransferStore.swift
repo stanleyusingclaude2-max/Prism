@@ -43,6 +43,8 @@ final class TransferStore: ObservableObject {
     init(rootURL: URL, onImport: @escaping @MainActor () -> Void) {
         self.rootURL = rootURL
         self.onImport = onImport
+        // Created once at launch, before any receiver can start.
+        TransferReceiver.removeLeftoverUploads(in: rootURL)
         refreshCapacity()
         backgroundObserver = NotificationCenter.default.addObserver(
             forName: UIApplication.didEnterBackgroundNotification, object: nil, queue: .main

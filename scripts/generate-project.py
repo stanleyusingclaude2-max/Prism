@@ -217,7 +217,9 @@ def main() -> int:
         "SUPPORTED_PLATFORMS": "iphoneos iphonesimulator", "SWIFT_VERSION": "5.0", "TARGETED_DEVICE_FAMILY": "1,2", "TEST_TARGET_NAME": "Prism",
     }
     project_config = configurations("Project", project_settings)
-    app_config = configurations("Prism", app_settings)
+    # The short test clips are only for UI tests and demos (-prism-sample-media
+    # in Debug runs); App Store builds leave them out.
+    app_config = configurations("Prism", app_settings, {"EXCLUDED_SOURCE_FILE_NAMES": "Fixtures"})
     test_config = configurations("PrismUITests", test_settings)
     app_target = add("PBXNativeTarget", "Prism", buildConfigurationList=app_config, buildPhases=[app_source_phase, app_framework_phase, app_resource_phase], buildRules=[], dependencies=[], name="Prism", packageProductDependencies=package_products, productName="Prism", productReference=app_product, productType="com.apple.product-type.application")
     # The proxy's project reference is filled after the project object is created.
