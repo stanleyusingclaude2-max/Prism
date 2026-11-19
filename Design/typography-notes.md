@@ -1,8 +1,6 @@
 # D-DIN typography
 
-The user's request for the SpaceX typeface is implemented as D-DIN, the text
-family referenced by the SpaceX website's public stylesheet. The interface does
-not use the stylized SpaceX logo letterforms as a body-text font.
+The interface uses D-DIN, an open-source DIN-style text family by Datto Inc.
 
 The app bundles the author's unmodified OpenType distribution from
 https://github.com/amcchord/datto-d-din under SIL OFL 1.1:

@@ -24,8 +24,7 @@ Upstream sources and notices:
 
 The corresponding source code of the LGPL components, together with the
 materials needed to relink Prism against modified versions of them, is
-available on request from the developer at the contact address shown on the
-App Store page.
+available on request from the developer: s7anleyzn@gmail.com
 
 D-DIN typeface
 

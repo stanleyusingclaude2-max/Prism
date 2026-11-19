@@ -37,9 +37,6 @@ copied into the application bundle.
 
 - Author's public distribution: https://github.com/amcchord/datto-d-din
 - Original font names: `D-DIN` and `D-DIN-Bold`.
-- Website reference: https://www.spacex.com/styles.1a4bd8588c6ea618.css
 
-This uses the public D-DIN family referenced by the SpaceX website; it does not
-include the SpaceX logo artwork or the site's separately named D-DIN-PRO fonts.
 The D-DIN files have no Chinese glyphs. iOS supplies the system Chinese fallback
 within mixed-language labels; the font files are not modified to invent glyphs.

@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prism 技术支持</title>
+<style>
+  :root { --bg:#ffffff; --text:#1c1c1e; --muted:#6e6e73; --line:#e5e5ea; --card:#f5f5f7; --accent:#5b5bd6; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#0e0e10; --text:#f2f2f7; --muted:#a1a1a6; --line:#2c2c2e; --card:#1c1c1e; --accent:#9b9bff; } }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font:16px/1.7 -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", sans-serif; }
+  main { max-width:720px; margin:0 auto; padding:40px 16px 64px; }
+  h1 { font-size:28px; margin:0 0 8px; }
+  h2 { font-size:19px; margin:32px 0 8px; }
+  h3 { font-size:16px; margin:20px 0 4px; }
+  p, li { margin:0 0 10px; }
+  ul, ol { padding-left:22px; }
+  a { color:var(--accent); }
+  .contact { background:var(--card); border-radius:14px; padding:16px 18px; margin:20px 0; }
+  .contact a { font-size:18px; font-weight:600; word-break:break-all; }
+  .muted { color:var(--muted); font-size:14px; }
+  hr { border:0; border-top:1px solid var(--line); margin:48px 0 32px; }
+  nav { font-size:14px; color:var(--muted); margin-bottom:24px; }
+</style>
+</head>
+<body>
+<main>
+<nav><a href="privacy.html">隐私政策</a> · <a href="#english">English</a></nav>
+
+<h1>Prism 技术支持</h1>
+<p>Prism 是面向短视频的本地播放器：快速检索文件，实时拖动定位、逐帧查看、捏合放大，通过 Wi-Fi 从电脑传入文件。</p>
+
+<div class="contact">
+  <p style="margin:0 0 4px">遇到问题或有建议，欢迎发邮件：</p>
+  <a href="mailto:s7anleyzn@gmail.com?subject=Prism%20%E5%8F%8D%E9%A6%88">s7anleyzn@gmail.com</a>
+  <p class="muted" style="margin:6px 0 0">请附上 App 版本（“媒体库 → + → 关于与开源许可”里可以看到）、设备型号和 iOS 版本；如果是某个文件播放异常，请说明文件格式。</p>
+</div>
+
+<h2>常见问题</h2>
+
+<h3>怎么把视频放进 Prism？</h3>
+<ul>
+  <li><strong>从“文件”App 导入</strong>：媒体库右上角 <strong>+</strong> → 导入。</li>
+  <li><strong>Wi-Fi 传输</strong>：打开“传文件”页并开启接收，电脑和手机连同一个 Wi-Fi，在电脑浏览器输入手机上显示的地址，拖入文件即可。传输期间请让 Prism 保持在前台。</li>
+  <li><strong>USB</strong>：在 Mac 的访达（或 Windows 的 Apple 设备 / iTunes）文件共享中，把文件拷进 Prism，回到媒体库下拉刷新。</li>
+  <li><strong>直接打开</strong>：在“文件”App 中选择视频 → 分享 → Prism，可直接播放。</li>
+</ul>
+
+<h3>电脑打不开传输地址？</h3>
+<ol>
+  <li>确认手机和电脑连的是同一个 Wi-Fi（部分公共 / 访客网络会隔离设备）。</li>
+  <li>在 iPhone“设置 → 隐私与安全性 → 本地网络”中允许 Prism。</li>
+  <li>地址要完整输入，包括冒号后的端口号，例如 <code>192.168.1.8:8080</code>。</li>
+  <li>关闭电脑或手机上的 VPN 后再试。</li>
+</ol>
+
+<h3>支持哪些格式？</h3>
+<p>Prism 使用 libmpv / FFmpeg 解码，支持 MP4、MOV、MKV、AVI、WebM 等常见格式，以及内置字幕；SRT、ASS、SSA、VTT 外挂字幕可在播放页“更多”中载入。</p>
+
+<h3>常用手势</h3>
+<ul>
+  <li>轻点画面：显示 / 隐藏控件。</li>
+  <li>左右拖动画面：快进 / 快退定位。</li>
+  <li>长按画面：临时 2 倍速，松手恢复。</li>
+  <li>双指捏合：放大画面，最多 4 倍。</li>
+  <li>上下滑动：切换上一个 / 下一个视频。</li>
+</ul>
+<p>完整说明在播放页右上角“更多 → 操作手势”。</p>
+
+<h3>删除 App 会怎样？</h3>
+<p>导入到 Prism 的文件只保存在 App 内，删除 App 会一并删除。请先在“文件”App 中把需要的文件拷出。</p>
+
+<h3>开源组件源码</h3>
+<p>Prism 的播放内核使用 LGPL 许可的 libmpv、FFmpeg 等组件。如需对应版本的源码及重新链接材料，请发邮件至上方地址索取。</p>
+
+<p class="muted">隐私：Prism 不收集任何个人数据，详见<a href="privacy.html">隐私政策</a>。</p>
+
+<hr>
+
+<section id="english" lang="en">
+<h1>Prism Support</h1>
+<p>Prism is a local player for short videos: fast file search, live scrubbing, frame stepping, pinch-to-zoom and Wi-Fi transfer from your computer.</p>
+
+<div class="contact">
+  <p style="margin:0 0 4px">Questions or feedback? Email us:</p>
+  <a href="mailto:s7anleyzn@gmail.com?subject=Prism%20Feedback">s7anleyzn@gmail.com</a>
+  <p class="muted" style="margin:6px 0 0">Please include the app version (Library → + → About), your device model and iOS version, and the file format if a file won't play.</p>
+</div>
+
+<h2>FAQ</h2>
+<h3>How do I add videos?</h3>
+<ul>
+  <li><strong>Files app</strong>: tap <strong>+</strong> in the Library, then Import.</li>
+  <li><strong>Wi-Fi Transfer</strong>: open Transfer and turn on receiving. With your phone and computer on the same Wi-Fi, enter the address shown on your phone in a computer browser and drop files in. Keep Prism in the foreground while transferring.</li>
+  <li><strong>USB</strong>: use File Sharing in Finder (or Apple Devices / iTunes on Windows) to copy files into Prism, then pull to refresh.</li>
+  <li><strong>Open in place</strong>: in the Files app, share a video to Prism to play it directly.</li>
+</ul>
+
+<h3>My computer can't reach the transfer address</h3>
+<ol>
+  <li>Make sure both devices are on the same Wi-Fi network (guest networks often isolate devices).</li>
+  <li>Allow Prism in Settings → Privacy &amp; Security → Local Network.</li>
+  <li>Type the full address including the port, e.g. <code>192.168.1.8:8080</code>.</li>
+  <li>Turn off any VPN and try again.</li>
+</ol>
+
+<h3>Supported formats</h3>
+<p>Prism decodes with libmpv / FFmpeg and plays MP4, MOV, MKV, AVI, WebM and other common formats, with embedded subtitles. External SRT, ASS, SSA and VTT subtitles can be loaded from the More menu in the player.</p>
+
+<h3>What happens if I delete the app?</h3>
+<p>Files imported into Prism live inside the app and are deleted with it. Copy anything you want to keep out through the Files app first.</p>
+
+<h3>Open-source components</h3>
+<p>Prism's playback engine uses LGPL-licensed libmpv, FFmpeg and related libraries. To request the corresponding source code and relinking materials, email the address above.</p>
+
+<p class="muted">Privacy: Prism collects no personal data. See the <a href="privacy.html">Privacy Policy</a>.</p>
+</section>
+</main>
+</body>
+</html>

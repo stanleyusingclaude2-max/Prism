@@ -1,8 +1,11 @@
 import SwiftUI
+import UIKit
 
 /// The app version and the open-source notices that ship inside the app.
 struct AboutView: View {
     @Environment(\.dismiss) private var dismiss
+
+    static let contactEmail = "s7anleyzn@gmail.com"
 
     private var version: String {
         let info = Bundle.main.infoDictionary
@@ -19,6 +22,26 @@ struct AboutView: View {
                         Text(version).font(AppTypography.numeric(.body)).foregroundStyle(Theme.muted)
                     }
                     .listRowBackground(Theme.surface)
+                }
+                Section {
+                    Link(destination: URL(string: "mailto:\(Self.contactEmail)?subject=Prism%20\(version.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")")!) {
+                        LabeledContent("反馈邮箱") {
+                            Text(Self.contactEmail).foregroundStyle(Theme.muted)
+                        }
+                    }
+                    .contextMenu {
+                        Button("复制邮箱地址") { UIPasteboard.general.string = Self.contactEmail }
+                    }
+                    .accessibilityIdentifier("about.email")
+                    .listRowBackground(Theme.surface)
+                    Link("技术支持", destination: URL(string: "https://stanleyusingclaude2-max.github.io/Prism/support.html")!)
+                        .listRowBackground(Theme.surface)
+                    Link("隐私政策", destination: URL(string: "https://stanleyusingclaude2-max.github.io/Prism/privacy.html")!)
+                        .listRowBackground(Theme.surface)
+                } header: {
+                    Text("联系与反馈").font(AppTypography.caption)
+                } footer: {
+                    Text("长按邮箱地址可以复制。").font(AppTypography.caption)
                 }
                 Section {
                     licenseLink("第三方组件说明", resource: "THIRD-PARTY-NOTICES")

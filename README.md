@@ -157,7 +157,7 @@ xcodebuild test -project Prism.xcodeproj -scheme Prism \
 
 UI 根据已确认的 [Figma 设计稿](https://www.figma.com/design/BArF6b7dUx2MvAV8U5coxI?node-id=3-59) 及真机反馈实现，采用深色背景和 `#C4F582` 浅绿色强调色。所有交互强调色直接使用同一品牌资源，并同步到 SwiftUI、实际 UIWindow 和 UIKit 控件。
 
-字体使用 [SpaceX 官网声明的 D-DIN 字体](https://www.spacex.com/styles.1a4bd8588c6ea618.css) 对应的开源 Regular／Bold 字体文件，覆盖 App 内文字和电脑上传页。英文与数字使用 D-DIN；该字体不包含中文，中文由 iOS 系统黑体回退显示。D-DIN 的数字宽度不一（“1”比“8”窄约 36%）且没有等宽数字特性，所以时间、计数、地址等会变化的数字改用系统等宽数字（`AppTypography.numeric`）。字体跟随 Dynamic Type，保持文字可读。字体来源与许可见 `THIRD-PARTY-NOTICES.md`。
+字体使用 Datto 发布的开源 [D-DIN](https://github.com/amcchord/datto-d-din) Regular／Bold 字体文件，覆盖 App 内文字和电脑上传页。英文与数字使用 D-DIN；该字体不包含中文，中文由 iOS 系统黑体回退显示。D-DIN 的数字宽度不一（“1”比“8”窄约 36%）且没有等宽数字特性，所以时间、计数、地址等会变化的数字改用系统等宽数字（`AppTypography.numeric`）。字体跟随 Dynamic Type，保持文字可读。字体来源与许可见 `THIRD-PARTY-NOTICES.md`。
 
 图标从原始 Figma 图层导出为本地矢量资源，没有运行时临时素材 URL。
 

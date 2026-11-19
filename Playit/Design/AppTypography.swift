@@ -1,7 +1,7 @@
 import SwiftUI
 import UIKit
 
-/// D-DIN is the text family used on the SpaceX website. The bundled, unmodified
+/// D-DIN (Datto Inc., SIL OFL 1.1) is the app's text family. The bundled, unmodified
 /// open-source fonts cover Latin text and numbers; Core Text supplies the system
 /// Chinese fallback for characters outside that font's glyph repertoire.
 enum AppTypography {
