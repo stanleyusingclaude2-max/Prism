@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="432" height="486" viewBox="321 269 432 486"><defs>
+  <clipPath id="clip"><path d="M387.99,287.00 L717.07,477.00 Q777.70,512.00 717.07,547.00 L387.99,737.00 Q327.36,772.00 327.36,702.00 L327.36,322.00 Q327.36,252.00 387.99,287.00 Z"/></clipPath>
+  <linearGradient id="spec" gradientUnits="userSpaceOnUse" x1="0" y1="402" x2="0" y2="662">
+    <stop offset="0" stop-color="#FF5C8A"/>
+    <stop offset="0.2" stop-color="#FFB15C"/>
+    <stop offset="0.4" stop-color="#F2EE7A"/>
+    <stop offset="0.58" stop-color="#5FE3A8"/>
+    <stop offset="0.78" stop-color="#4FA8FF"/>
+    <stop offset="1" stop-color="#9467FF"/>
+  </linearGradient>
+  <linearGradient id="fade" gradientUnits="userSpaceOnUse" x1="363.3633839131577" y1="0" x2="777.6965938810658" y2="0">
+    <stop offset="0" stop-color="#FFFFFF" stop-opacity="0"/>
+    <stop offset="0.35" stop-color="#FFFFFF" stop-opacity="0.75"/>
+    <stop offset="1" stop-color="#FFFFFF" stop-opacity="1"/>
+  </linearGradient>
+  <mask id="fadeMask"><rect x="0" y="0" width="1024" height="1024" fill="url(#fade)"/></mask>
+  <linearGradient id="ridge" gradientUnits="userSpaceOnUse" x1="327.3633839131577" y1="0" x2="777.6965938810658" y2="0">
+    <stop offset="0" stop-color="#FFFFFF" stop-opacity="0"/>
+    <stop offset="1" stop-color="#FFFFFF" stop-opacity="0.45"/>
+  </linearGradient>
+  <linearGradient id="rim" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.95"/>
+    <stop offset="0.55" stop-color="#FFFFFF" stop-opacity="0.35"/>
+    <stop offset="1" stop-color="#FFFFFF" stop-opacity="0.6"/>
+  </linearGradient>
+  <filter id="b18" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="18"/></filter>
+</defs>
+<g clip-path="url(#clip)">
+  <path d="M327.36,252.00 L777.70,512.00 Q777.70,512.00 777.70,512.00 L327.36,512.00 Q327.36,512.00 327.36,512.00 L327.36,252.00 Q327.36,252.00 327.36,252.00 Z" fill="#FFFFFF" opacity="0.3"/>
+  <path d="M327.36,512.00 L777.70,512.00 Q777.70,512.00 777.70,512.00 L327.36,772.00 Q327.36,772.00 327.36,772.00 L327.36,512.00 Q327.36,512.00 327.36,512.00 Z" fill="#FFFFFF" opacity="0.17"/>
+  <g mask="url(#fadeMask)"><path d="M363.4,518.0 L893.7,325.0 L893.7,754.1 Z" fill="url(#spec)" filter="url(#b18)"/></g>
+  <line x1="327.3633839131577" y1="512" x2="777.6965938810658" y2="512" stroke="url(#ridge)" stroke-width="2"/>
+</g>
+<path d="M387.99,287.00 L717.07,477.00 Q777.70,512.00 717.07,547.00 L387.99,737.00 Q327.36,772.00 327.36,702.00 L327.36,322.00 Q327.36,252.00 387.99,287.00 Z" fill="none" stroke="url(#rim)" stroke-width="7"/></svg>

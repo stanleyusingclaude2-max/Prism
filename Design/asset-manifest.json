@@ -1,0 +1,168 @@
+{
+  "figmaFileKey": "BArF6b7dUx2MvAV8U5coxI",
+  "notes": "Exact SVG_STRING exports of original icon layers. User video/image content is dynamic; Figma example photos are not shipped. Device chrome is rendered by iOS.",
+  "assets": [
+    {
+      "name": "IconSignal",
+      "nodeId": "8:22",
+      "relativePath": "Playit/Resources/Assets.xcassets/IconSignal.imageset/IconSignal.svg"
+    },
+    {
+      "name": "IconWifi",
+      "nodeId": "8:24",
+      "relativePath": "Playit/Resources/Assets.xcassets/IconWifi.imageset/IconWifi.svg"
+    },
+    {
+      "name": "IconBattery",
+      "nodeId": "8:27",
+      "relativePath": "Playit/Resources/Assets.xcassets/IconBattery.imageset/IconBattery.svg"
+    },
+    {
+      "name": "IconPlus",
+      "nodeId": "8:35",
+      "relativePath": "Playit/Resources/Assets.xcassets/IconPlus.imageset/IconPlus.svg"
+    },
+    {
+      "name": "IconSettings",
+      "nodeId": "8:38",
+      "relativePath": "Playit/Resources/Assets.xcassets/IconSettings.imageset/IconSettings.svg"
+    },
+    {
+      "name": "IconSearch",
+      "nodeId": "I8:50;5:3",
+      "relativePath": "Playit/Resources/Assets.xcassets/IconSearch.imageset/IconSearch.svg"
+    },
+    {
+      "name": "IconSort",
+      "nodeId": "8:58",
+      "relativePath": "Playit/Resources/Assets.xcassets/IconSort.imageset/IconSort.svg"
+    },
+    {
+      "name": "IconMore",
+      "nodeId": "I8:78;5:18",
+      "relativePath": "Playit/Resources/Assets.xcassets/IconMore.imageset/IconMore.svg"
+    },
+    {
+      "name": "IconGrid",
+      "nodeId": "I8:62;5:58",
+      "relativePath": "Playit/Resources/Assets.xcassets/IconGrid.imageset/IconGrid.svg"
+    },
+    {
+      "name": "IconTransfer",
+      "nodeId": "I8:62;5:65",
+      "relativePath": "Playit/Resources/Assets.xcassets/IconTransfer.imageset/IconTransfer.svg"
+    },
+    {
+      "name": "IconFolder",
+      "nodeId": "I8:298;5:25",
+      "relativePath": "Playit/Resources/Assets.xcassets/IconFolder.imageset/IconFolder.svg"
+    },
+    {
+      "name": "IconChevron",
+      "nodeId": "I8:298;5:31",
+      "relativePath": "Playit/Resources/Assets.xcassets/IconChevron.imageset/IconChevron.svg"
+    },
+    {
+      "name": "IconClose",
+      "nodeId": "8:395",
+      "relativePath": "Playit/Resources/Assets.xcassets/IconClose.imageset/IconClose.svg"
+    },
+    {
+      "name": "IconCheck",
+      "nodeId": "8:402",
+      "relativePath": "Playit/Resources/Assets.xcassets/IconCheck.imageset/IconCheck.svg"
+    },
+    {
+      "name": "IconBack",
+      "nodeId": "9:324",
+      "relativePath": "Playit/Resources/Assets.xcassets/IconBack.imageset/IconBack.svg"
+    },
+    {
+      "name": "IconExpand",
+      "nodeId": "9:337",
+      "relativePath": "Playit/Resources/Assets.xcassets/IconExpand.imageset/IconExpand.svg"
+    },
+    {
+      "name": "IconFrameprev",
+      "nodeId": "9:361",
+      "relativePath": "Playit/Resources/Assets.xcassets/IconFrameprev.imageset/IconFrameprev.svg"
+    },
+    {
+      "name": "IconPlay",
+      "nodeId": "9:367",
+      "relativePath": "Playit/Resources/Assets.xcassets/IconPlay.imageset/IconPlay.svg"
+    },
+    {
+      "name": "IconFramenext",
+      "nodeId": "9:372",
+      "relativePath": "Playit/Resources/Assets.xcassets/IconFramenext.imageset/IconFramenext.svg"
+    },
+    {
+      "name": "IconLoop",
+      "nodeId": "9:382",
+      "relativePath": "Playit/Resources/Assets.xcassets/IconLoop.imageset/IconLoop.svg"
+    },
+    {
+      "name": "IconSubtitle",
+      "nodeId": "9:386",
+      "relativePath": "Playit/Resources/Assets.xcassets/IconSubtitle.imageset/IconSubtitle.svg"
+    },
+    {
+      "name": "IconAudio",
+      "nodeId": "9:391",
+      "relativePath": "Playit/Resources/Assets.xcassets/IconAudio.imageset/IconAudio.svg"
+    },
+    {
+      "name": "IconLock",
+      "nodeId": "9:395",
+      "relativePath": "Playit/Resources/Assets.xcassets/IconLock.imageset/IconLock.svg"
+    },
+    {
+      "name": "IconCopy",
+      "nodeId": "9:539",
+      "relativePath": "Playit/Resources/Assets.xcassets/IconCopy.imageset/IconCopy.svg"
+    },
+    {
+      "name": "IconFile",
+      "nodeId": "9:552",
+      "relativePath": "Playit/Resources/Assets.xcassets/IconFile.imageset/IconFile.svg"
+    }
+  ],
+  "additions": {
+    "notes": "Drawn for Prism 0.3.1 to match the exported icons (22-point grid, 1.55833 stroke, filled play shape). Not part of the Figma export.",
+    "assets": [
+      {
+        "name": "IconPause",
+        "use": "Player pause, paired with IconPlay",
+        "relativePath": "Playit/Resources/Assets.xcassets/IconPause.imageset/IconPause.svg"
+      },
+      {
+        "name": "IconRotate",
+        "use": "Play a landscape video in landscape",
+        "relativePath": "Playit/Resources/Assets.xcassets/IconRotate.imageset/IconRotate.svg"
+      },
+      {
+        "name": "IconCollapse",
+        "use": "Leave landscape mode; restore the complete image after zooming",
+        "relativePath": "Playit/Resources/Assets.xcassets/IconCollapse.imageset/IconCollapse.svg"
+      }
+    ]
+  },
+  "brand": {
+    "notes": "Prism 0.3.2 brand assets: the B glass-prism icon chosen by the user (Nov 2026). The 1024 PNG and the mark PNGs are rendered from these SVG sources; Xcode does not read the SVGs.",
+    "assets": [
+      {
+        "name": "AppIcon",
+        "use": "Home-screen icon (opaque 1024×1024 RGB; iOS applies the mask)",
+        "source": "Design/AppIcon-B.svg",
+        "relativePath": "Playit/Resources/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png"
+      },
+      {
+        "name": "PrismMark",
+        "use": "Brand mark at the top left of the library's root screen (28 pt tall, 1x/2x/3x PNG, original colors)",
+        "source": "Design/PrismMark.svg",
+        "relativePath": "Playit/Resources/Assets.xcassets/PrismMark.imageset"
+      }
+    ]
+  }
+}

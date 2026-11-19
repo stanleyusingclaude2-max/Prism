@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+<defs>
+  <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#181B2D"/>
+    <stop offset="1" stop-color="#06070D"/>
+  </linearGradient>
+  <clipPath id="clip"><path d="M387.99,287.00 L717.07,477.00 Q777.70,512.00 717.07,547.00 L387.99,737.00 Q327.36,772.00 327.36,702.00 L327.36,322.00 Q327.36,252.00 387.99,287.00 Z"/></clipPath>
+  <linearGradient id="spec" gradientUnits="userSpaceOnUse" x1="0" y1="402" x2="0" y2="662">
+    <stop offset="0" stop-color="#FF5C8A"/>
+    <stop offset="0.2" stop-color="#FFB15C"/>
+    <stop offset="0.4" stop-color="#F2EE7A"/>
+    <stop offset="0.58" stop-color="#5FE3A8"/>
+    <stop offset="0.78" stop-color="#4FA8FF"/>
+    <stop offset="1" stop-color="#9467FF"/>
+  </linearGradient>
+  <linearGradient id="fade" gradientUnits="userSpaceOnUse" x1="363.3633839131577" y1="0" x2="777.6965938810658" y2="0">
+    <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.0"/>
+    <stop offset="0.35" stop-color="#FFFFFF" stop-opacity="0.75"/>
+    <stop offset="1" stop-color="#FFFFFF" stop-opacity="1"/>
+  </linearGradient>
+  <linearGradient id="ridge" gradientUnits="userSpaceOnUse" x1="327.3633839131577" y1="0" x2="777.6965938810658" y2="0">
+    <stop offset="0" stop-color="#FFFFFF" stop-opacity="0"/>
+    <stop offset="1" stop-color="#FFFFFF" stop-opacity="0.45"/>
+  </linearGradient>
+  <mask id="fadeMask"><rect width="1024" height="1024" fill="url(#fade)"/></mask>
+  <linearGradient id="rim" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.9"/>
+    <stop offset="0.55" stop-color="#FFFFFF" stop-opacity="0.22"/>
+    <stop offset="1" stop-color="#FFFFFF" stop-opacity="0.45"/>
+  </linearGradient>
+  <filter id="b12" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="18"/></filter>
+  <filter id="b90" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="90"/></filter>
+</defs>
+<rect width="1024" height="1024" fill="url(#bg)"/>
+<path d="M387.99,287.00 L717.07,477.00 Q777.70,512.00 717.07,547.00 L387.99,737.00 Q327.36,772.00 327.36,702.00 L327.36,322.00 Q327.36,252.00 387.99,287.00 Z" fill="#6C5CFF" opacity="0.22" filter="url(#b90)"/>
+<g clip-path="url(#clip)">
+  <path d="M327.36,252.00 L777.70,512.00 Q777.70,512.00 777.70,512.00 L327.36,512.00 Q327.36,512.00 327.36,512.00 L327.36,252.00 Q327.36,252.00 327.36,252.00 Z" fill="#FFFFFF" opacity="0.24"/>
+  <path d="M327.36,512.00 L777.70,512.00 Q777.70,512.00 777.70,512.00 L327.36,772.00 Q327.36,772.00 327.36,772.00 L327.36,512.00 Q327.36,512.00 327.36,512.00 Z" fill="#FFFFFF" opacity="0.13"/>
+  <g mask="url(#fadeMask)"><path d="M363.4,518.0 L893.7,325.0 L893.7,754.1 Z" fill="url(#spec)" filter="url(#b12)"/></g>
+  <line x1="327.3633839131577" y1="512" x2="777.6965938810658" y2="512" stroke="url(#ridge)" stroke-width="2"/>
+</g>
+<path d="M387.99,287.00 L717.07,477.00 Q777.70,512.00 717.07,547.00 L387.99,737.00 Q327.36,772.00 327.36,702.00 L327.36,322.00 Q327.36,252.00 387.99,287.00 Z" fill="none" stroke="url(#rim)" stroke-width="5"/>
+
+</svg>

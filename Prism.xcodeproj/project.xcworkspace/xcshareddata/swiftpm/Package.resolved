@@ -1,0 +1,13 @@
+{
+  "pins": [
+    {
+      "identity": "mpvkit",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/mpvkit/MPVKit.git",
+      "state": {
+        "revision": "98c3453e252922e3136422da3fbb2e341ed9edc8"
+      }
+    }
+  ],
+  "version": 2
+}
