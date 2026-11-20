@@ -48,3 +48,19 @@ iOS 部分（SwiftUI、UIKit、MPVKit）仍未编译。需要在 Mac／iPhone �
 4. 缩略图：覆盖安装新版本后，已有的缩略图第一次启动会重新生成一次（key 格式变化），之后再更新 App 不应再全部重新生成。
 5. 上传临时文件：Wi-Fi 上传一个大文件的过程中从 Xcode 停止 App，再次启动后，“文件”App 或 Xcode 的容器下载中 `Documents/.playit-incoming` 不再存在。
 6. Archive 后检查 `.app` 包内没有 `Fixtures` 目录，且 `PrivacyInfo.xcprivacy` 在包内。
+
+## 文件夹分类中的选择与全选删除
+
+问题：在“文件夹”分类点“选择”后，轻点文件夹仍会进入文件夹而不是勾选；“全选”只选文件；删除只处理文件；只有文件夹的页面，“选择”按钮不可用。
+
+修复：
+- `MediaLibraryRepository.delete(folders:items:)`：一次删除所选文件夹和文件。先校验整个选择，再把所有条目移入暂存目录，索引写入失败时全部恢复；嵌套在所选文件夹里的文件夹和文件随上级一起删除；删除后清理变空的上级目录，与现有删除行为一致。
+- `LibraryStore.deleteSelection(folders:files:)`：调用上面的操作，只重新扫描一次，并上报被删除和被清理的目录，让正在浏览的页面退回上一级。
+- `LibraryView`：选择模式下文件夹行显示勾选圈，轻点切换勾选；“全选／取消全选”包含文件夹；计数包含文件夹；有文件夹时删除改为“删除 N 个文件夹和 M 个文件？”确认；选中文件夹时移动按钮不可用；文件夹的“更多”菜单和长按菜单加入“多选”；选择栏优先于导入进度显示；勾选状态报告给 VoiceOver。
+
+已验证：
+- `PlayitCore` 新增 4 个测试并全部通过（共 151 个，1 个跳过）：混合删除、嵌套与重复选择、任何一项无效时什么都不删、索引写入失败时全部恢复、变空的上级被清理、空选择不做任何事。另外故意去掉“回滚”和“跳过所选文件夹内的文件”两段实现各一次，对应测试都能失败。
+- `LibraryStore.deleteSelection` 及其后台调用原样抽出，与真实的 PlayitCore 一起编译（Swift 5 模式、并发检查 targeted），在临时媒体库上运行：全选并删除一个文件夹里的两个子文件夹和一个文件后，该文件夹被清理并上报；包含不存在的文件夹时整批不删并给出错误。
+- 新增 UI 测试 `testSelectionModeSelectsFoldersAndSelectAllDeletesThem`（未运行）。
+
+`LibraryView` 的 SwiftUI 改动未编译，需要在 Mac 上确认，并按 [真机验收](docs/DEVICE-ACCEPTANCE.md) “文件库与导入”第 9 项操作一遍。

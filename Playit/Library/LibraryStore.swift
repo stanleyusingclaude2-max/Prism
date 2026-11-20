@@ -60,6 +60,10 @@ private actor LibraryWorker {
         try repository.deleteFolder(at: path)
         return missingFolders(in: ancestorFolders(of: [path]))
     }
+    func deleteSelection(folders: [String], items: [MediaItem]) throws -> Set<String> {
+        try repository.delete(folders: folders, items: items)
+        return missingFolders(in: ancestorFolders(of: folders + items.map(\.folderPath)))
+    }
     func cleanupEmptyFolders() throws -> Set<String> { Set(try repository.cleanupEmptyFolders()) }
     func folders(in folder: String?) throws -> [MediaFolder] { try repository.folders(in: folder) }
 
@@ -278,6 +282,37 @@ final class LibraryStore: ObservableObject {
             // The filesystem mutation has committed. Invalidate the old rows
             // even if a subsequent scan fails or is superseded by another one.
             items.removeAll { $0.folderPath == folder.path || $0.folderPath.hasPrefix(folder.path + "/") }
+            revision += 1
+            queryRevision += 1
+            recordRemovedFolders(removed)
+            await refresh()
+            return true
+        } catch {
+            let message = error.localizedDescription
+            await refresh()
+            errorMessage = message
+            return false
+        }
+    }
+
+    /// Deletes the folders and files picked in selection mode as one operation,
+    /// with a single rescan. Returns whether the deletion was committed.
+    @discardableResult
+    func deleteSelection(folders: [MediaFolder], files: [MediaItem]) async -> Bool {
+        let paths = folders.map(\.path)
+        guard !paths.isEmpty || !files.isEmpty,
+              !paths.contains(where: { isDeletingFolderPath($0) }) else { return false }
+        deletingFolderPaths.formUnion(paths)
+        defer { deletingFolderPaths.subtract(paths) }
+        do {
+            let removed = try await worker.deleteSelection(folders: paths, items: files)
+            // The filesystem change has committed. Drop the old rows even if
+            // the rescan below fails or is superseded by another one.
+            let fileIDs = Set(files.map(\.id))
+            items.removeAll { item in
+                fileIDs.contains(item.id) ||
+                    paths.contains { item.folderPath == $0 || item.folderPath.hasPrefix($0 + "/") }
+            }
             revision += 1
             queryRevision += 1
             recordRemovedFolders(removed)

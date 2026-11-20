@@ -255,6 +255,67 @@ public final class MediaLibraryRepository: @unchecked Sendable {
         }
     }
 
+    /// Removes a mixed selection of folders and files as one operation. The
+    /// whole selection is validated first and every entry is staged before the
+    /// index is committed, so a failure restores all of it. A folder inside
+    /// another selected folder, and a file inside a selected folder, leave with
+    /// that folder. Ancestors that become empty are removed afterwards, as with
+    /// `delete(items:)` and `deleteFolder(at:)`.
+    public func delete(folders folderPaths: [String], items: [MediaItem]) throws {
+        try serialized {
+            try prepare()
+            let selected = Set(folderPaths)
+            let outermost = selected.filter { path in
+                !selected.contains { other in path.hasPrefix(other + "/") }
+            }.sorted()
+            func isInsideSelectedFolder(_ relativePath: String) -> Bool {
+                outermost.contains { relativePath.hasPrefix($0 + "/") }
+            }
+            var folders: [URL] = []
+            for path in outermost {
+                let url = try resolvedPath(path, allowRoot: false)
+                guard entryExists(url) else { throw MediaLibraryError.fileNotFound }
+                try requireDirectory(url)
+                folders.append(url)
+            }
+            var seen = Set<String>()
+            let files = try items
+                .filter { seen.insert($0.relativePath).inserted && !isInsideSelectedFolder($0.relativePath) }
+                .map { (item: $0, url: try existingMediaURL(for: $0)) }
+            guard !folders.isEmpty || !files.isEmpty else { return }
+
+            let staging = rootURL.appendingPathComponent(".playit-delete-" + UUID().uuidString, isDirectory: true)
+            try fileManager.createDirectory(at: staging, withIntermediateDirectories: false)
+            let oldCatalog = catalog ?? [:]
+            var completed: [(source: URL, staged: URL)] = []
+            do {
+                for (index, folder) in folders.enumerated() {
+                    let staged = staging.appendingPathComponent("folder-\(index)", isDirectory: true)
+                    try fileManager.moveItem(at: folder, to: staged)
+                    completed.append((folder, staged))
+                }
+                for (index, file) in files.enumerated() {
+                    let staged = staging.appendingPathComponent(String(index))
+                    try fileManager.moveItem(at: file.url, to: staged)
+                    completed.append((file.url, staged))
+                    catalog?.removeValue(forKey: file.item.relativePath)
+                }
+                catalog = catalog?.filter { !isInsideSelectedFolder($0.key) }
+                try saveCatalog()
+            } catch {
+                for move in completed.reversed() { try? fileManager.moveItem(at: move.staged, to: move.source) }
+                catalog = oldCatalog
+                if (try? fileManager.contentsOfDirectory(atPath: staging.path).isEmpty) == true {
+                    try? fileManager.removeItem(at: staging)
+                }
+                throw error
+            }
+            try? Data().write(to: staging.appendingPathComponent(".committed"), options: .atomic)
+            try? fileManager.removeItem(at: staging)
+            pruneEmptyAncestors(startingAt: (folders + files.map(\.url)).map { $0.deletingLastPathComponent() })
+        }
+    }
+
     /// Removes old empty folder trees, returning only directories actually
     /// removed, with children preceding their parents. Call once on app startup;
     /// scans and folder creation deliberately leave new empty folders usable.

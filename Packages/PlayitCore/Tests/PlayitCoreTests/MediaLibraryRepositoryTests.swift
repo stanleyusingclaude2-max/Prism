@@ -487,6 +487,87 @@ final class MediaLibraryRepositoryTests: XCTestCase {
         XCTAssertFalse(try FileManager.default.contentsOfDirectory(atPath: root.path).contains { $0.hasPrefix(".playit-delete-") })
     }
 
+    func testDeleteSelectionRemovesFoldersAndFilesTogether() throws {
+        for (name, parent) in [("旅行", nil), ("海边", "旅行"), ("工作", nil), ("保留", nil)] as [(String, String?)] {
+            _ = try repository.createFolder(named: name, in: parent)
+        }
+        let nested = try repository.importFile(from: source("clip.mp4"), into: "旅行/海边")
+        _ = try repository.importFile(from: source("doc.jpg"), into: "工作")
+        let kept = try repository.importFile(from: source("keep.mp4"), into: "保留")
+        let loose = try repository.importFile(from: source("loose.mp4"))
+        let remaining = try repository.importFile(from: source("remaining.png"))
+        try repository.setMetadata(for: kept, duration: 7, pixelWidth: 640, pixelHeight: 360)
+
+        // A nested folder, a file inside a selected folder and a repeated file
+        // are all part of the same selection rather than separate failures.
+        try repository.delete(folders: ["旅行", "旅行/海边", "工作"], items: [loose, nested, loose])
+
+        for path in ["旅行", "工作", loose.relativePath] {
+            XCTAssertFalse(FileManager.default.fileExists(atPath: root.appendingPathComponent(path).path), path)
+        }
+        XCTAssertEqual(try repository.folders().map(\.path), ["保留"])
+        XCTAssertEqual(Set(try repository.scan().map(\.id)), [kept.id, remaining.id])
+        let index = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: root.appendingPathComponent(".playit-index.json"))) as? [String: Any])
+        XCTAssertEqual(Set(index.keys), [kept.relativePath, remaining.relativePath])
+        XCTAssertEqual(try MediaLibraryRepository(rootURL: root).scan().first { $0.id == kept.id }?.duration, 7)
+        XCTAssertFalse(try FileManager.default.contentsOfDirectory(atPath: root.path).contains { $0.hasPrefix(".playit-delete-") })
+    }
+
+    func testDeleteSelectionValidatesEverythingBeforeRemovingAnything() throws {
+        _ = try repository.createFolder(named: "旅行")
+        let media = try repository.importFile(from: source("clip.mp4"), into: "旅行")
+        let loose = try repository.importFile(from: source("loose.mp4"))
+        let missing = MediaItem(relativePath: "gone.mp4", kind: .video)
+        let attempts: [([String], [MediaItem])] = [
+            (["旅行", "missing"], [loose]),
+            (["旅行"], [loose, missing]),
+            (["旅行", ""], []),
+            (["旅行", "../Sources"], []),
+            (["旅行", loose.relativePath], [])
+        ]
+        for (folders, items) in attempts {
+            XCTAssertThrowsError(try repository.delete(folders: folders, items: items), "\(folders)")
+        }
+        XCTAssertEqual(try Data(contentsOf: repository.url(for: media)), Data([1, 2, 3, 4]))
+        XCTAssertEqual(Set(try repository.scan().map(\.id)), [media.id, loose.id])
+        XCTAssertFalse(try FileManager.default.contentsOfDirectory(atPath: root.path).contains { $0.hasPrefix(".playit-delete-") })
+    }
+
+    func testDeleteSelectionRestoresEverythingWhenCatalogCommitFails() throws {
+        _ = try repository.createFolder(named: "旅行")
+        _ = try repository.createFolder(named: "工作")
+        let first = try repository.importFile(from: source("clip.mp4"), into: "旅行")
+        let second = try repository.importFile(from: source("doc.jpg"), into: "工作")
+        let loose = try repository.importFile(from: source("loose.mp4"))
+        let index = root.appendingPathComponent(".playit-index.json")
+        try FileManager.default.removeItem(at: index)
+        try FileManager.default.createDirectory(at: index, withIntermediateDirectories: false)
+
+        XCTAssertThrowsError(try repository.delete(folders: ["旅行", "工作"], items: [loose]))
+
+        for item in [first, second, loose] {
+            XCTAssertEqual(try Data(contentsOf: repository.url(for: item)), Data([1, 2, 3, 4]), item.relativePath)
+        }
+        XCTAssertEqual(Set(try repository.folders().map(\.path)), ["工作", "旅行"])
+        XCTAssertFalse(try FileManager.default.contentsOfDirectory(atPath: root.path).contains { $0.hasPrefix(".playit-delete-") })
+    }
+
+    func testDeleteSelectionPrunesTheFolderItEmptiesAndIgnoresAnEmptySelection() throws {
+        _ = try repository.createFolder(named: "上级")
+        _ = try repository.createFolder(named: "A", in: "上级")
+        _ = try repository.createFolder(named: "B", in: "上级")
+        _ = try repository.createFolder(named: "旁边")
+
+        try repository.delete(folders: [], items: [])
+        XCTAssertEqual(Set(try repository.folders().map(\.path)), ["上级", "旁边"])
+
+        try repository.delete(folders: ["上级/A", "上级/B"], items: [])
+
+        XCTAssertFalse(FileManager.default.fileExists(atPath: root.appendingPathComponent("上级").path))
+        XCTAssertEqual(try repository.folders().map(\.path), ["旁边"])
+        XCTAssertTrue(FileManager.default.fileExists(atPath: root.path))
+    }
+
     func testCorruptCatalogDoesNotHideMedia() throws {
         _ = try repository.importFile(from: source("clip.mp4"))
         try Data("not-json".utf8).write(to: root.appendingPathComponent(".playit-index.json"))

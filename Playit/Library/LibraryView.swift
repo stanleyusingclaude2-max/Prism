@@ -16,6 +16,11 @@ private enum LibraryCategory: String, CaseIterable, Identifiable, Sendable {
 
 private struct FolderRoute: Hashable { let path: String }
 private struct PhotoSelection: Identifiable { let id: String }
+/// Folders and files picked in selection mode, waiting for confirmation.
+private struct SelectionDeletion {
+    let folders: [MediaFolder]
+    let files: [MediaItem]
+}
 private struct LibraryQueryRequest: Hashable, Sendable {
     let category: LibraryCategory
     let search: String
@@ -85,7 +90,10 @@ private struct LibraryBrowser: View {
     @State private var isDeletingFolder = false
     @State private var moveItems: [MediaItem] = []
     @State private var isSelecting = false
+    /// Selected files by id, and selected folders by path.
     @State private var selection = Set<String>()
+    @State private var selectedFolders = Set<String>()
+    @State private var selectionDeletion: SelectionDeletion?
     @State private var selectedPhoto: PhotoSelection?
     @State private var results: [MediaItem] = []
     @State private var resultsCategory: LibraryCategory = .videos
@@ -109,6 +117,13 @@ private struct LibraryBrowser: View {
         return folders.filter { query.isEmpty || $0.name.localizedStandardContains(query) }
     }
     private var selectedItems: [MediaItem] { store.items.filter { selection.contains($0.id) } }
+    private var selectedFolderList: [MediaFolder] { folders.filter { selectedFolders.contains($0.path) } }
+    private var selectionCount: Int { selection.count + selectedFolders.count }
+    private var canSelect: Bool { !filteredItems.isEmpty || !filteredFolders.isEmpty }
+    private var allVisibleSelected: Bool {
+        canSelect && filteredItems.allSatisfy { selection.contains($0.id) } &&
+            filteredFolders.allSatisfy { selectedFolders.contains($0.path) }
+    }
     private var photoItems: [MediaItem] { filteredItems.filter { $0.kind == .image } }
     private var hasResults: Bool { !filteredItems.isEmpty || !filteredFolders.isEmpty }
     private var countText: String {
@@ -236,8 +251,25 @@ private struct LibraryBrowser: View {
         }
     }
 
+    private var browserWithSelectionDeleteDialog: some View {
+        browserWithFolderDeleteDialog.confirmationDialog(selectionDeletionTitle, isPresented: selectionDeletePresented,
+                                                         titleVisibility: .visible, presenting: selectionDeletion) { pending in
+            Button("删除", role: .destructive) { deleteSelection(pending) }
+                .accessibilityIdentifier("selection.confirmDelete")
+            Button("取消", role: .cancel) { selectionDeletion = nil }
+        } message: { _ in
+            Text("所选文件夹及其中的所有文件、子文件夹都将从 Prism 删除，无法撤销。")
+        }
+    }
+
+    private var selectionDeletionTitle: String {
+        guard let pending = selectionDeletion else { return "" }
+        let folderPart = "\(pending.folders.count) 个文件夹"
+        return pending.files.isEmpty ? "删除 \(folderPart)？" : "删除 \(folderPart)和 \(pending.files.count) 个文件？"
+    }
+
     private var browserWithErrorAlert: some View {
-        browserWithFolderDeleteDialog.alert("操作未完成", isPresented: errorPresented) {
+        browserWithSelectionDeleteDialog.alert("操作未完成", isPresented: errorPresented) {
             Button("好", role: .cancel) { store.errorMessage = nil }
         } message: { Text(store.errorMessage ?? "") }
     }
@@ -258,6 +290,10 @@ private struct LibraryBrowser: View {
         Binding(get: { folderToDelete != nil }, set: { if !$0 { folderToDelete = nil } })
     }
 
+    private var selectionDeletePresented: Binding<Bool> {
+        Binding(get: { selectionDeletion != nil }, set: { if !$0 { selectionDeletion = nil } })
+    }
+
     private var errorPresented: Binding<Bool> {
         Binding(get: { store.errorMessage != nil }, set: { if !$0 { store.errorMessage = nil } })
     }
@@ -267,6 +303,7 @@ private struct LibraryBrowser: View {
         let snapshot = await store.folders(in: folderPath)
         guard !Task.isCancelled else { return }
         folders = snapshot
+        selectedFolders.formIntersection(Set(snapshot.map(\.path)))
     }
 
     private func importSelectedFiles(_ result: Result<[URL], Error>) {
@@ -281,8 +318,7 @@ private struct LibraryBrowser: View {
         moveItems = []
         Task {
             await store.move(items, to: folder)
-            selection.removeAll()
-            isSelecting = false
+            endSelection()
         }
     }
 
@@ -307,8 +343,7 @@ private struct LibraryBrowser: View {
         deleteItems = []
         Task {
             await store.delete(items)
-            selection.removeAll()
-            isSelecting = false
+            endSelection()
         }
     }
 
@@ -316,7 +351,7 @@ private struct LibraryBrowser: View {
         Picker("媒体类型", selection: Binding(
             get: { category },
             set: { value in
-                selection.removeAll(); isSelecting = false
+                endSelection()
                 category = value
             }
         )) {
@@ -392,9 +427,18 @@ private struct LibraryBrowser: View {
     }
 
     private func folderRow(_ folder: MediaFolder) -> some View {
-        HStack(spacing: 8) {
-            Button { onNavigate(folder.path) } label: {
+        let isSelected = selectedFolders.contains(folder.path)
+        return HStack(spacing: 8) {
+            // In selection mode a tap marks the folder instead of opening it.
+            Button {
+                if isSelecting { toggleSelection(of: folder) } else { onNavigate(folder.path) }
+            } label: {
                 HStack(spacing: 12) {
+                    if isSelecting {
+                        Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                            .foregroundStyle(Theme.accent)
+                            .frame(width: 20, height: 44)
+                    }
                     DesignIcon(name: "IconFolder", size: 28)
                         .foregroundStyle(Theme.muted).frame(width: 56, height: 56)
                         .background(Theme.surface, in: RoundedRectangle(cornerRadius: 12))
@@ -405,27 +449,37 @@ private struct LibraryBrowser: View {
                             .font(AppTypography.caption).foregroundStyle(Theme.muted)
                     }
                     Spacer(minLength: 8)
-                    DesignIcon(name: "IconChevron", size: 14).foregroundStyle(Theme.subtle)
+                    if !isSelecting {
+                        DesignIcon(name: "IconChevron", size: 14).foregroundStyle(Theme.subtle)
+                    }
                 }
                 .padding(.vertical, 4)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .accessibilityAddTraits(isSelecting && isSelected ? .isSelected : [])
             .accessibilityIdentifier("folder.\(folder.path)")
-            Menu { folderActions(folder) } label: {
-                DesignIcon(name: "IconMore", size: 22).foregroundStyle(Theme.muted)
-                    .frame(width: 44, height: 44)
+            if !isSelecting {
+                Menu { folderMenuActions(folder) } label: {
+                    DesignIcon(name: "IconMore", size: 22).foregroundStyle(Theme.muted)
+                        .frame(width: 44, height: 44)
+                }
+                .frame(width: 44, height: 44).fixedSize()
+                .accessibilityLabel("\(folder.name) 的操作")
+                .accessibilityIdentifier("folder.options.\(folder.path)")
             }
-            .frame(width: 44, height: 44).fixedSize()
-            .accessibilityLabel("\(folder.name) 的操作")
-            .accessibilityIdentifier("folder.options.\(folder.path)")
         }
         .disabled(isDeletingFolder)
-        .contextMenu { folderActions(folder) }
+        .contextMenu { folderMenuActions(folder) }
         .swipeActions(edge: .trailing, allowsFullSwipe: false) { folderActions(folder) }
         .listRowBackground(Theme.bg)
         .listRowSeparatorTint(Theme.border)
         .listRowInsets(EdgeInsets(top: 10, leading: 20, bottom: 10, trailing: 12))
+    }
+
+    @ViewBuilder private func folderMenuActions(_ folder: MediaFolder) -> some View {
+        Button { beginSelection(folderPaths: [folder.path]) } label: { Label("多选", systemImage: "checkmark.circle") }
+        folderActions(folder)
     }
 
     private func folderActions(_ folder: MediaFolder) -> some View {
@@ -445,6 +499,63 @@ private struct LibraryBrowser: View {
             if deleted { folders.removeAll { $0.path == folder.path || $0.path.hasPrefix(folder.path + "/") } }
             isDeletingFolder = false
             if deleted { onFolderDeleted(folder.path) }
+        }
+    }
+
+    private func requestSelectionDeletion() {
+        let chosenFolders = selectedFolderList
+        guard !chosenFolders.isEmpty else {
+            deleteItems = selectedItems
+            return
+        }
+        // Files inside a selected folder go with it and are not counted twice.
+        let files = selectedItems.filter { item in
+            !chosenFolders.contains { item.folderPath == $0.path || item.folderPath.hasPrefix($0.path + "/") }
+        }
+        selectionDeletion = SelectionDeletion(folders: chosenFolders, files: files)
+    }
+
+    private func deleteSelection(_ pending: SelectionDeletion) {
+        selectionDeletion = nil
+        guard !isDeletingFolder else { return }
+        isDeletingFolder = true
+        Task {
+            let paths = pending.folders.map(\.path)
+            let deleted = await store.deleteSelection(folders: pending.folders, files: pending.files)
+            if deleted {
+                folders.removeAll { folder in paths.contains { folder.path == $0 || folder.path.hasPrefix($0 + "/") } }
+                endSelection()
+            }
+            isDeletingFolder = false
+            if deleted { paths.forEach(onFolderDeleted) }
+        }
+    }
+
+    private func beginSelection(files: Set<String> = [], folderPaths: Set<String> = []) {
+        selection = files
+        selectedFolders = folderPaths
+        isSelecting = true
+    }
+
+    private func endSelection() {
+        selection.removeAll()
+        selectedFolders.removeAll()
+        isSelecting = false
+    }
+
+    private func toggleSelection(of folder: MediaFolder) {
+        if selectedFolders.contains(folder.path) { selectedFolders.remove(folder.path) } else { selectedFolders.insert(folder.path) }
+    }
+
+    /// Selects every folder and file shown, or clears the selection when all of
+    /// them already are.
+    private func toggleSelectAll() {
+        if allVisibleSelected {
+            selection.removeAll()
+            selectedFolders.removeAll()
+        } else {
+            selection = Set(filteredItems.map(\.id))
+            selectedFolders = Set(filteredFolders.map(\.path))
         }
     }
 
@@ -472,6 +583,7 @@ private struct LibraryBrowser: View {
             .buttonStyle(.plain)
             .frame(maxWidth: .infinity, alignment: .leading)
             .accessibilityLabel(rowAccessibilityLabel(for: item))
+            .accessibilityAddTraits(isSelecting && selection.contains(item.id) ? .isSelected : [])
             .accessibilityIdentifier("media.\(item.filename)")
             if !isSelecting {
                 Menu { fileActions(item) } label: {
@@ -500,7 +612,7 @@ private struct LibraryBrowser: View {
         Button { moveItems = [item] } label: { Label("移动到文件夹", systemImage: "folder") }
             .accessibilityIdentifier("file.move.\(item.relativePath)")
         ShareLink(item: store.url(for: item)) { Label("分享文件", systemImage: "square.and.arrow.up") }
-        Button { selection = [item.id]; isSelecting = true } label: { Label("多选", systemImage: "checkmark.circle") }
+        Button { beginSelection(files: [item.id]) } label: { Label("多选", systemImage: "checkmark.circle") }
         Button(role: .destructive) { deleteItems = [item] } label: { Label("删除", systemImage: "trash") }
             .accessibilityIdentifier("file.delete.\(item.relativePath)")
     }
@@ -561,14 +673,14 @@ private struct LibraryBrowser: View {
     @ToolbarContentBuilder private var navigationToolbar: some ToolbarContent {
         ToolbarItem(placement: .topBarTrailing) {
             Button {
-                isSelecting.toggle()
-                if !isSelecting { selection.removeAll() }
+                if isSelecting { endSelection() } else { beginSelection() }
             } label: {
                 Text(isSelecting ? "完成" : "选择").font(AppTypography.subheadline)
             }
             .foregroundStyle(isSelecting ? Theme.accent : Theme.text)
-            .disabled(!isSelecting && filteredItems.isEmpty)
-            .accessibilityLabel(isSelecting ? "完成选择" : "选择文件")
+            // A page holding only folders can be selected from as well.
+            .disabled(!isSelecting && !canSelect)
+            .accessibilityLabel(isSelecting ? "完成选择" : effectiveCategory == .folders ? "选择文件夹或文件" : "选择文件")
             .accessibilityIdentifier("library.select")
         }
         ToolbarItem(placement: .topBarTrailing) {
@@ -598,20 +710,32 @@ private struct LibraryBrowser: View {
         if isDeletingFolder {
             HStack(spacing: 10) { ProgressView().tint(Theme.accent); Text("正在删除文件夹…").font(AppTypography.caption); Spacer() }
                 .padding().background(Theme.surface)
+        } else if isSelecting {
+            // Shown before the import status: these buttons are what the
+            // person is working with, and an import can take a while.
+            HStack {
+                Text("已选 \(selectionCount) 项").font(AppTypography.subheadline).foregroundStyle(Theme.text)
+                Spacer()
+                Button(allVisibleSelected ? "取消全选" : "全选", action: toggleSelectAll)
+                    .font(AppTypography.subheadline)
+                    .disabled(!canSelect)
+                    .accessibilityIdentifier("selection.all")
+                // Only files can be moved; the button waits until no folder is selected.
+                Button { moveItems = selectedItems } label: { Image(systemName: "folder").frame(width: 44, height: 44) }
+                    .disabled(selection.isEmpty || !selectedFolders.isEmpty)
+                    .accessibilityLabel(selectedFolders.isEmpty ? "移动所选文件" : "移动所选文件，文件夹不能移动")
+                    .accessibilityIdentifier("selection.move")
+                Button(role: .destructive, action: requestSelectionDeletion) {
+                    Image(systemName: "trash").frame(width: 44, height: 44)
+                }
+                .disabled(selectionCount == 0)
+                .accessibilityLabel("删除所选项目")
+                .accessibilityIdentifier("selection.delete")
+            }
+            .padding(.horizontal, 20).background(Theme.surface)
         } else if store.isImporting {
             HStack(spacing: 10) { ProgressView().tint(Theme.accent); Text(store.importProgress).font(AppTypography.caption); Spacer() }
                 .padding().background(Theme.surface)
-        } else if isSelecting {
-            HStack {
-                Text("已选 \(selection.count) 项").font(AppTypography.subheadline).foregroundStyle(Theme.text)
-                Spacer()
-                Button("全选") { selection = Set(filteredItems.map(\.id)) }.font(AppTypography.subheadline)
-                Button { moveItems = selectedItems } label: { Image(systemName: "folder").frame(width: 44, height: 44) }
-                    .disabled(selection.isEmpty).accessibilityLabel("移动所选文件")
-                Button(role: .destructive) { deleteItems = selectedItems } label: { Image(systemName: "trash").frame(width: 44, height: 44) }
-                    .disabled(selection.isEmpty).accessibilityLabel("删除所选文件")
-            }
-            .padding(.horizontal, 20).background(Theme.surface)
         }
     }
 

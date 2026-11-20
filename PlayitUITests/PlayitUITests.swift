@@ -82,6 +82,45 @@ final class PlayitUITests: XCTestCase {
         XCTAssertFalse(app.alerts["操作未完成"].exists)
     }
 
+    func testSelectionModeSelectsFoldersAndSelectAllDeletesThem() {
+        let parent = "UITest-Select-" + UUID().uuidString
+        app.buttons["文件夹"].tap()
+        createEmptyFolder(named: parent)
+        app.buttons["folder.\(parent)"].tap()
+        XCTAssertTrue(app.navigationBars[parent].waitForExistence(timeout: 5))
+        createEmptyFolder(named: "A", in: parent)
+        createEmptyFolder(named: "B", in: parent)
+
+        // A page holding only folders can enter selection mode, and a tap marks
+        // a folder instead of opening it.
+        let select = app.buttons["library.select"]
+        XCTAssertTrue(select.isEnabled)
+        select.tap()
+        let first = app.buttons["folder.\(parent)/A"]
+        first.tap()
+        XCTAssertTrue(app.staticTexts["已选 1 项"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.navigationBars[parent].exists)
+        XCTAssertTrue(first.isSelected)
+        first.tap()
+        XCTAssertTrue(app.staticTexts["已选 0 项"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["selection.delete"].isEnabled)
+
+        app.buttons["selection.all"].tap()
+        XCTAssertTrue(app.staticTexts["已选 2 项"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["selection.move"].isEnabled, "Folders cannot be moved.")
+        app.buttons["selection.delete"].tap()
+        let confirm = app.buttons["selection.confirmDelete"]
+        XCTAssertTrue(confirm.waitForExistence(timeout: 5))
+        confirm.tap()
+
+        // Removing both subfolders empties the parent, which is cleaned up like
+        // after any other deletion, so the browser returns to the library root.
+        XCTAssertTrue(app.navigationBars["Prism"].waitForExistence(timeout: 10))
+        expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: app.buttons["folder.\(parent)"])
+        waitForExpectations(timeout: 10)
+        XCTAssertFalse(app.alerts["操作未完成"].exists)
+    }
+
     func testDeletingLastVideoAutomaticallyRemovesFolderAndReturnsToParent() {
         let name = "UITest-AutoPrune-" + UUID().uuidString
         let filename = "sample-legacy.avi"
@@ -483,7 +522,7 @@ final class PlayitUITests: XCTestCase {
         XCTAssertTrue(element.exists)
     }
 
-    private func createEmptyFolder(named name: String) {
+    private func createEmptyFolder(named name: String, in parent: String? = nil) {
         app.buttons["library.import"].tap()
         app.buttons["folder.new"].tap()
         let prompt = app.alerts["新建文件夹"]
@@ -493,7 +532,8 @@ final class PlayitUITests: XCTestCase {
         field.tap()
         field.typeText(name)
         prompt.buttons["folder.create"].tap()
-        XCTAssertTrue(app.buttons["folder.\(name)"].waitForExistence(timeout: 10))
+        let path = parent.map { $0 + "/" + name } ?? name
+        XCTAssertTrue(app.buttons["folder.\(path)"].waitForExistence(timeout: 10))
     }
 
     private func openVideo(_ filename: String) {
