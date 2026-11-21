@@ -428,7 +428,7 @@ final class LibraryStore: ObservableObject {
             if let previous { await previous.value }
             guard let self, !Task.isCancelled else { return }
             let pending = snapshot.filter {
-                Self.needsMetadata($0) && !attemptedMetadata.contains(Self.metadataKey($0))
+                Self.needsMetadata($0) && !self.attemptedMetadata.contains(Self.metadataKey($0))
             }
             var batch: [MediaItem] = []
             var lastFlush = ContinuousClock.now
@@ -438,7 +438,7 @@ final class LibraryStore: ObservableObject {
                 start += group.count
                 let keys = group.map { Self.metadataKey($0) }
                 attemptedMetadata.formUnion(keys)
-                let enriched = await Self.readMetadata(group.map { (item: $0, url: url(for: $0)) })
+                let enriched = await Self.readMetadata(group.map { (item: $0, url: self.url(for: $0)) })
                 if Task.isCancelled {
                     // The pass that replaced this one reads these files again.
                     attemptedMetadata.subtract(keys)

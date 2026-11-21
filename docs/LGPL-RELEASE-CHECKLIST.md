@@ -8,6 +8,32 @@ Prism 链接的是 MPVKit 的非 GPL 产品，其中 libmpv、FFmpeg 等组件�
 - 逐一记录每个组件的版本和许可证。MPVKit 的 `Package.swift` 列出了每个二进制的下载地址和校验值，可作为版本依据。
 - 确认没有误选 `MPVKit-GPL` 产品；当前工程链接的是 `MPVKit`。
 
+0.3.2（Build 16）在 GitHub Actions 上用 Xcode 26.6 构建的 IPA，`Prism.app/Frameworks` 里实际有 27 个动态库。下表的许可证是这些项目常见的许可，发布前请以对应版本上游的 LICENSE 为准：
+
+| Framework | 上游项目 | 常见许可证 |
+| --- | --- | --- |
+| Libmpv | mpv | LGPL-2.1+（非 GPL 构建） |
+| Libavcodec、Libavdevice、Libavfilter、Libavformat、Libavutil、Libswresample、Libswscale | FFmpeg | LGPL-2.1+（非 GPL 构建） |
+| Libplacebo | libplacebo | LGPL-2.1+ |
+| Libbluray | libbluray | LGPL-2.1+ |
+| Libfribidi | FriBidi | LGPL-2.1+ |
+| gnutls | GnuTLS | LGPL-2.1+ |
+| nettle、hogweed | Nettle | LGPL-3.0+ 或 GPL-2.0+ 双许可 |
+| gmp | GMP | LGPL-3.0+ 或 GPL-2.0+ 双许可 |
+| Libuchardet | uchardet | MPL-1.1 / GPL-2.0 / LGPL-2.1 三许可 |
+| Libssl、Libcrypto | OpenSSL | Apache-2.0 |
+| Libass | libass | ISC |
+| Libdav1d | dav1d | BSD-2-Clause |
+| Libuavs3d | uavs3d | BSD 类许可 |
+| Libdovi | libdovi（dovi_tool） | MIT |
+| Libfreetype | FreeType | FreeType License 或 GPL-2.0 双许可 |
+| Libharfbuzz | HarfBuzz | MIT |
+| Libunibreak | libunibreak | zlib |
+| lcms2 | Little CMS | MIT |
+| Libshaderc_combined | shaderc（含 glslang、SPIRV-Tools） | Apache-2.0 等 |
+
+现有的 `THIRD-PARTY-NOTICES.txt` 只写了 MPVKit、mpv、FFmpeg、MoltenVK 和 libplacebo，需要按上表补齐各组件的版权声明和许可文本。
+
 ## 2. 在 App 内展示许可声明（已完成基础部分）
 
 - 0.3.1 已在“媒体库 → + → 关于与开源许可”中展示第三方组件说明、LGPL 全文和 D-DIN 字体许可。

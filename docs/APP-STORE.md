@@ -2,7 +2,7 @@
 
 ## 代码里已经完成
 
-- 出口合规：Info.plist 声明 `ITSAppUsesNonExemptEncryption = NO`，上传时不再询问加密问题。
+- 出口合规：Info.plist 声明 `ITSAppUsesNonExemptEncryption = NO`，上传时不再询问加密问题。MPVKit 随包带有 OpenSSL（Libssl、Libcrypto）和 GnuTLS，供 FFmpeg 访问网络地址；Prism 只打开本机文件，不会调用这些加密功能，所以声明“不使用加密”是合理的。以后如果加入在线播放，需要重新回答这个问题。
 - 隐私清单 `PrivacyInfo.xcprivacy`：不追踪、不收集数据；声明了 UserDefaults、文件时间戳、磁盘空间和系统开机时间四类 API 的使用理由。
 - 语言：开发语言和唯一的本地化为简体中文（`CFBundleDevelopmentRegion`、`CFBundleLocalizations`），系统界面显示中文。
 - “关于”页：版本、反馈邮箱 s7anleyzn@gmail.com、技术支持和隐私政策链接、三份开源许可。
