@@ -1,0 +1,49 @@
+name: Build installable IPA
+
+# Produces an unsigned Prism .ipa as a downloadable artifact. Install it with a
+# tool that signs it with your Apple ID; see docs/INSTALL.md.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ipa-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ipa:
+    runs-on: macos-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+      - name: Generate project from current sources
+        run: python3 scripts/generate-project.py
+      - uses: actions/cache@v4
+        with:
+          path: /tmp/playit-spm
+          key: mpvkit-98c3453e252922e3136422da3fbb2e341ed9edc8-${{ runner.arch }}
+      - name: Resolve pinned packages
+        run: >-
+          xcodebuild -resolvePackageDependencies
+          -project Prism.xcodeproj -scheme Prism
+          -clonedSourcePackagesDirPath /tmp/playit-spm
+      - name: Build unsigned IPA
+        env:
+          PRISM_SPM_DIR: /tmp/playit-spm
+        run: bash scripts/build-ipa.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Prism-unsigned-ipa
+          path: |
+            build/*.ipa
+            build/logs/
+          if-no-files-found: warn
+          retention-days: 30

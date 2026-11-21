@@ -17,7 +17,7 @@
 - 宽屏（iPad、展开的 iPhone Duo）竖着拿时不显示“横屏播放”按钮；系统拒绝转屏时安静地回到常规布局。
 - “关于”页加入反馈邮箱、技术支持和隐私政策链接。
 
-上架步骤和仍需手动完成的事项见 [docs/APP-STORE.md](docs/APP-STORE.md)。
+上架步骤和仍需手动完成的事项见 [docs/APP-STORE.md](docs/APP-STORE.md)。安装包（未签名 IPA）的获取和安装方法见 [docs/INSTALL.md](docs/INSTALL.md)。
 
 ## 0.3.2 更新
 

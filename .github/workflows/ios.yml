@@ -1,7 +1,10 @@
 name: iOS build and tests
 
+# Pushes to main only: changes reach main and a working branch together, and
+# one run per change is enough.
 on:
   push:
+    branches: [main]
   pull_request:
   workflow_dispatch:
 
@@ -22,7 +25,7 @@ jobs:
         run: swift test --package-path "Packages/${{ matrix.package }}"
 
   ios:
-    runs-on: macos-15
+    runs-on: macos-latest
     needs: core-tests
     timeout-minutes: 45
     steps:
