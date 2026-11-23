@@ -80,6 +80,7 @@ private struct LibraryBrowser: View {
     @State private var query = ""
     @State private var folders: [MediaFolder] = []
     @State private var showImporter = false
+    @State private var showPhotoPicker = false
     @State private var showCreateFolder = false
     @State private var showsAbout = false
     @State private var newFolderName = ""
@@ -100,7 +101,13 @@ private struct LibraryBrowser: View {
     @State private var resultsFolder: String?
     @State private var isSearching = true
 
-    private var sort: MediaSort { MediaSort(rawValue: sortRaw) ?? .importedAt }
+    private var sort: MediaSort {
+        let saved = MediaSort(rawValue: sortRaw) ?? .importedAt
+        return effectiveCategory == .images && saved == .duration ? .importedAt : saved
+    }
+    private var availableSorts: [MediaSort] {
+        MediaSort.allCases.filter { effectiveCategory != .images || $0 != .duration }
+    }
     private var direction: SortDirection { SortDirection(rawValue: directionRaw) ?? .descending }
     /// Inside a folder the browser always shows that folder's own contents; the
     /// "all videos / all images" summaries belong to the library root.
@@ -155,7 +162,7 @@ private struct LibraryBrowser: View {
 
     @ViewBuilder private var resultsContent: some View {
         if hasResults {
-            if effectiveCategory == .images && !isSelecting { photoGrid }
+            if effectiveCategory == .images { photoGrid }
             else { mediaList }
         } else {
             GeometryReader { geometry in
@@ -187,6 +194,12 @@ private struct LibraryBrowser: View {
         browserLayout
             .task(id: "\(folderPath ?? ""): \(store.revision): \(isDeletingFolder)") { await reloadFolders() }
             .task(id: request) { await updateResults() }
+            .onChange(of: store.items.isEmpty) { wasEmpty, isEmpty in
+                guard wasEmpty, !isEmpty, folderPath == nil, query.isEmpty, category != .folders,
+                      let kind = store.items.first?.kind,
+                      store.items.allSatisfy({ $0.kind == kind }) else { return }
+                category = kind == .image ? .images : .videos
+            }
             // Files only disappear through a rescan or a folder deletion, and both
             // bump the revision. Comparing the whole item list on every update did not scale.
             .onChange(of: store.revision) { _, _ in
@@ -202,6 +215,14 @@ private struct LibraryBrowser: View {
 
     private var browserWithSheets: some View {
         browserWithImporter
+            .sheet(isPresented: $showPhotoPicker) {
+                PhotoImportPicker { providers in
+                    showPhotoPicker = false
+                    guard !providers.isEmpty else { return }
+                    Task { await store.importPhotos(providers, into: folderPath) }
+                }
+                .ignoresSafeArea()
+            }
             .sheet(isPresented: movePresented) {
                 MoveDestinationSheet(store: store, onMove: moveSelectedItems)
             }
@@ -368,8 +389,8 @@ private struct LibraryBrowser: View {
             Text(countText).font(AppTypography.caption).foregroundStyle(Theme.muted)
             Spacer()
             Menu {
-                Picker("排序方式", selection: $sortRaw) {
-                    ForEach(MediaSort.allCases, id: \.self) { value in
+                Picker("排序方式", selection: Binding(get: { sort.rawValue }, set: { sortRaw = $0 })) {
+                    ForEach(availableSorts, id: \.self) { value in
                         Text(value.title).tag(value.rawValue)
                     }
                 }
@@ -633,16 +654,30 @@ private struct LibraryBrowser: View {
                                 MediaThumbnail(item: item, url: store.url(for: item), showsDuration: false)
                             }
                             .clipped()
+                            .overlay(alignment: .topTrailing) {
+                                if isSelecting {
+                                    Image(systemName: selection.contains(item.id) ? "checkmark.circle.fill" : "circle")
+                                        .symbolRenderingMode(.palette)
+                                        .foregroundStyle(selection.contains(item.id) ? Theme.onAccent : .white, Theme.accent)
+                                        .font(.system(size: 23, weight: .semibold))
+                                        .background(selection.contains(item.id) ? Theme.accent : .black.opacity(0.6), in: Circle())
+                                        .padding(6)
+                                        .allowsHitTesting(false)
+                                        .accessibilityHidden(true)
+                                }
+                            }
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
-                    .contextMenu { fileActions(item) }
+                    .contextMenu { if !isSelecting { fileActions(item) } }
+                    .accessibilityAddTraits(isSelecting && selection.contains(item.id) ? .isSelected : [])
                     .accessibilityLabel("\(item.filename)，\(item.displaySize)")
                     .accessibilityIdentifier("media.\(item.filename)")
                 }
             }
             .padding(.bottom)
         }
+        .accessibilityIdentifier("library.photoGrid")
         .refreshable { await store.refresh() }
         .scrollDismissesKeyboard(.interactively)
     }
@@ -657,6 +692,22 @@ private struct LibraryBrowser: View {
                 Text("没有找到“\(query)”").font(AppTypography.headline).foregroundStyle(Theme.text)
                 Text("试试其他名称，或切换媒体类型。").font(AppTypography.subheadline).foregroundStyle(Theme.muted)
                 Button("清除搜索") { query = "" }.buttonStyle(.bordered)
+            } else if folderPath == nil && store.items.isEmpty && folders.isEmpty {
+                Image(systemName: "photo.on.rectangle.angled")
+                    .font(.system(size: 40)).foregroundStyle(Theme.muted)
+                Text("导入视频或图片").font(AppTypography.headline).foregroundStyle(Theme.text)
+                Button { showPhotoPicker = true } label: {
+                    Label("从相册导入", systemImage: "photo.on.rectangle")
+                        .padding(.horizontal, 12).frame(minHeight: 38)
+                }
+                .buttonStyle(.borderedProminent).foregroundStyle(Theme.onAccent)
+                .accessibilityIdentifier("library.emptyPhotos")
+                HStack(spacing: 20) {
+                    Button("从文件导入") { showImporter = true }
+                        .accessibilityIdentifier("library.emptyFiles")
+                    Button("从电脑传入", action: onTransfer)
+                }
+                .font(AppTypography.subheadline)
             } else {
                 Image(systemName: effectiveCategory == .folders ? "folder" : effectiveCategory == .images ? "photo.on.rectangle" : "film.stack")
                     .font(.system(size: 40)).foregroundStyle(Theme.muted)
@@ -685,7 +736,9 @@ private struct LibraryBrowser: View {
         }
         ToolbarItem(placement: .topBarTrailing) {
             Menu {
-                Button { showImporter = true } label: { Label("导入视频或图片", systemImage: "doc.badge.plus") }
+                Button { showPhotoPicker = true } label: { Label("从相册导入", systemImage: "photo.on.rectangle") }
+                    .accessibilityIdentifier("library.importPhotos")
+                Button { showImporter = true } label: { Label("从文件导入", systemImage: "doc.badge.plus") }
                 Button { newFolderName = ""; showCreateFolder = true } label: { Label("新建文件夹", systemImage: "folder.badge.plus") }
                     .accessibilityIdentifier("folder.new")
                 Button(action: onTransfer) { Label("从电脑传入", systemImage: "desktopcomputer") }

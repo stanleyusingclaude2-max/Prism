@@ -12,9 +12,10 @@ enum Theme {
     // Resolve the brand asset directly. Color.accentColor reads the current
     // environment tint and can otherwise resolve to iOS blue at presentation boundaries.
     static let accent = Color("AccentColor")
-    static let uiAccent = UIColor(named: "AccentColor") ?? UIColor(red: 196 / 255, green: 245 / 255, blue: 130 / 255, alpha: 1)
+    static let uiAccent = UIColor(named: "AccentColor") ?? UIColor(red: 158 / 255, green: 220 / 255, blue: 255 / 255, alpha: 1)
     static let onAccent = Color("OnAccent")
     static let accentSoft = Color("AccentSoft")
+    static let success = Color("Success")
     static let danger = Color("Danger")
 }
 

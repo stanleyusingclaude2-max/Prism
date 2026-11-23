@@ -395,7 +395,8 @@ struct VideoPlayerScreen: View {
                 }
                 PlaybackTimeRow(clock: controller.clock, duration: controller.duration,
                                 showsMilliseconds: !controller.isPlaying || controller.isScrubbing,
-                                highlighted: controller.isScrubbing)
+                                highlighted: controller.isScrubbing,
+                                onCapture: showsQuickCapture ? controller.captureCurrentFrame : nil)
                 timeline
                 transportRow(isLandscapeInterface: isLandscapeInterface)
             }
@@ -407,6 +408,11 @@ struct VideoPlayerScreen: View {
                     .allowsHitTesting(false)
             }
         }
+    }
+
+    private var showsQuickCapture: Bool {
+        !controller.isPlaying && controller.canExportFrame && !controller.isScreenSeeking &&
+            !showsABEditor && !showsRatePicker && !isPresentingOptions
     }
 
     private var timeline: some View {
@@ -957,19 +963,40 @@ private struct PlaybackTimeRow: View {
     let duration: Double
     let showsMilliseconds: Bool
     let highlighted: Bool
+    let onCapture: (() -> Void)?
 
     var body: some View {
-        HStack(alignment: .firstTextBaseline) {
+        HStack(spacing: 8) {
             Text(MediaFormatting.time(clock.time, milliseconds: showsMilliseconds))
                 .foregroundStyle(highlighted ? Theme.accent : Theme.text)
                 .accessibilityIdentifier("player.currentTime")
-            Spacer(minLength: 8)
+                .allowsHitTesting(false)
+            Spacer(minLength: 0)
+            if let onCapture {
+                Button(action: onCapture) {
+                    ViewThatFits(in: .horizontal) {
+                        Label("保存此帧", systemImage: "camera").fixedSize()
+                        Image(systemName: "camera")
+                    }
+                    .font(AppTypography.footnote)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 4)
+                    .background(.black.opacity(0.55), in: Capsule())
+                    .frame(minWidth: 44, minHeight: 44)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(Theme.accent)
+                .accessibilityLabel("保存此帧")
+                .accessibilityIdentifier("player.quickCapture")
+                Spacer(minLength: 0)
+            }
             Text(MediaFormatting.time(duration))
                 .foregroundStyle(Theme.muted)
                 .accessibilityIdentifier("player.duration")
+                .allowsHitTesting(false)
         }
         .font(AppTypography.numeric(.footnote))
-        .allowsHitTesting(false)
     }
 }
 

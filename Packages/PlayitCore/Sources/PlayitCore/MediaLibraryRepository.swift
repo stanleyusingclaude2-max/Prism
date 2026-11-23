@@ -48,10 +48,16 @@ public final class MediaLibraryRepository: @unchecked Sendable {
     /// the source is never moved or removed.
     @discardableResult
     public func importFile(from sourceURL: URL, into folder: String? = nil) throws -> MediaItem {
+        try importFile(from: sourceURL, named: sourceURL.lastPathComponent, into: folder)
+    }
+
+    /// File providers may vend a temporary URL with a different name or no extension.
+    @discardableResult
+    public func importFile(from sourceURL: URL, named filename: String, into folder: String? = nil) throws -> MediaItem {
         try serialized {
             try prepare()
             guard sourceURL.isFileURL,
-                  let kind = MediaKind.classify(fileExtension: sourceURL.pathExtension)
+                  let kind = MediaKind.classify(fileExtension: (filename as NSString).pathExtension)
             else { throw MediaLibraryError.unsupportedFile }
             let sourceValues = try sourceURL.resourceValues(forKeys: resourceKeys)
             guard sourceValues.isRegularFile == true, sourceValues.isSymbolicLink != true
@@ -59,7 +65,7 @@ public final class MediaLibraryRepository: @unchecked Sendable {
 
             let destinationFolder = try resolvedPath(folder ?? "", allowRoot: true)
             try requireDirectory(destinationFolder)
-            let name = try validatedName(sourceURL.lastPathComponent)
+            let name = try validatedName(filename)
             let destination = uniqueDestination(name: name, in: destinationFolder)
             try ensureFreeSpace(byteCount: Int64(sourceValues.fileSize ?? 0))
             do {

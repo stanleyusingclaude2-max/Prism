@@ -30,7 +30,7 @@ enum AppAppearance {
         UITabBar.appearance().scrollEdgeAppearance = tab
         UITabBar.appearance().unselectedItemTintColor = muted
 
-        // The accent is kept for play, progress and "+": a large lime segment at the
+        // The accent is kept for play, progress and "+": a bright segment at the
         // top of the library competed with them, so selection uses a raised neutral.
         let segmented = UISegmentedControl.appearance()
         segmented.selectedSegmentTintColor = UIColor(named: "Raised") ?? .tertiarySystemFill

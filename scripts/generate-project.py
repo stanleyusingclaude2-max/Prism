@@ -201,19 +201,19 @@ def main() -> int:
         "GCC_WARN_UNUSED_VARIABLE": "YES", "IPHONEOS_DEPLOYMENT_TARGET": "17.0", "SDKROOT": "iphoneos", "SWIFT_VERSION": "5.0",
     }
     app_settings = {
-        "ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME": "AccentColor", "CODE_SIGN_STYLE": "Automatic", "CURRENT_PROJECT_VERSION": "16",
+        "ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME": "AccentColor", "CODE_SIGN_STYLE": "Automatic", "CURRENT_PROJECT_VERSION": "17",
         "DEVELOPMENT_TEAM": "", "ENABLE_PREVIEWS": "YES", "GENERATE_INFOPLIST_FILE": "NO", "INFOPLIST_FILE": "Playit/Resources/Info.plist",
         "IPHONEOS_DEPLOYMENT_TARGET": "17.0", "LD_RUNPATH_SEARCH_PATHS": ["$(inherited)", "@executable_path/Frameworks"],
-        "MARKETING_VERSION": "0.3.2", "PRODUCT_BUNDLE_IDENTIFIER": "com.playit.app", "PRODUCT_NAME": "$(TARGET_NAME)",
+        "MARKETING_VERSION": "0.3.3", "PRODUCT_BUNDLE_IDENTIFIER": "com.playit.app", "PRODUCT_NAME": "$(TARGET_NAME)",
         "SUPPORTED_PLATFORMS": "iphoneos iphonesimulator", "SUPPORTS_MACCATALYST": "NO", "SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD": "NO",
         "SWIFT_EMIT_LOC_STRINGS": "YES", "SWIFT_STRICT_CONCURRENCY": "targeted", "SWIFT_VERSION": "5.0", "TARGETED_DEVICE_FAMILY": "1,2",
     }
     if (ROOT / "Playit/Resources/Assets.xcassets/AppIcon.appiconset").is_dir():
         app_settings["ASSETCATALOG_COMPILER_APPICON_NAME"] = "AppIcon"
     test_settings = {
-        "CODE_SIGN_STYLE": "Automatic", "CURRENT_PROJECT_VERSION": "16", "DEVELOPMENT_TEAM": "", "GENERATE_INFOPLIST_FILE": "YES",
+        "CODE_SIGN_STYLE": "Automatic", "CURRENT_PROJECT_VERSION": "17", "DEVELOPMENT_TEAM": "", "GENERATE_INFOPLIST_FILE": "YES",
         "IPHONEOS_DEPLOYMENT_TARGET": "17.0", "LD_RUNPATH_SEARCH_PATHS": ["$(inherited)", "@executable_path/Frameworks", "@loader_path/Frameworks"],
-        "MARKETING_VERSION": "0.3.2", "PRODUCT_BUNDLE_IDENTIFIER": "com.playit.app.uitests", "PRODUCT_NAME": "$(TARGET_NAME)",
+        "MARKETING_VERSION": "0.3.3", "PRODUCT_BUNDLE_IDENTIFIER": "com.playit.app.uitests", "PRODUCT_NAME": "$(TARGET_NAME)",
         "SUPPORTED_PLATFORMS": "iphoneos iphonesimulator", "SWIFT_VERSION": "5.0", "TARGETED_DEVICE_FAMILY": "1,2", "TEST_TARGET_NAME": "Prism",
     }
     project_config = configurations("Project", project_settings)

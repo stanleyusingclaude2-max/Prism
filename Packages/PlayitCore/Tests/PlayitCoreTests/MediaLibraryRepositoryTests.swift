@@ -38,6 +38,19 @@ final class MediaLibraryRepositoryTests: XCTestCase {
         XCTAssertTrue(FileManager.default.fileExists(atPath: input.path))
     }
 
+    func testPhotoProviderFileUsesSelectedNameInDestinationFolder() throws {
+        let temporary = try source("provider-file.tmp")
+        _ = try repository.createFolder(named: "骑行")
+        let first = try repository.importFile(from: temporary, named: "转弯.mov", into: "骑行")
+        let second = try repository.importFile(from: temporary, named: "转弯.mov", into: "骑行")
+        XCTAssertEqual(first.relativePath, "骑行/转弯.mov")
+        XCTAssertEqual(first.kind, .video)
+        XCTAssertEqual(second.filename, "转弯 (2).mov")
+        try FileManager.default.removeItem(at: temporary)
+        XCTAssertEqual(try Data(contentsOf: repository.url(for: first)), Data([1, 2, 3, 4]))
+        XCTAssertEqual(try repository.scan().count, 2)
+    }
+
     func testScanClassifiesCommonExtensionsAndSkipsHiddenOrTemporaryFiles() throws {
         _ = try repository.scan()
         for ext in ["MP4", "mov", "mkv", "avi", "webm", "m2ts", "JPG", "png", "heic", "webp", "bmp"] {

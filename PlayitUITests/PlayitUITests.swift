@@ -44,6 +44,22 @@ final class PlayitUITests: XCTestCase {
         XCTAssertTrue(photo.waitForExistence(timeout: 5))
     }
 
+    func testPhotoGridStaysVisibleWhileSelecting() {
+        app.buttons["所有图片"].tap()
+        let photo = app.buttons["media.sample-still.png"]
+        XCTAssertTrue(photo.waitForExistence(timeout: 10))
+        app.buttons["library.select"].tap()
+        XCTAssertTrue(app.scrollViews["library.photoGrid"].exists)
+        photo.tap()
+        XCTAssertTrue(photo.isSelected)
+        XCTAssertTrue(app.staticTexts["已选 1 项"].exists)
+        XCTAssertFalse(app.buttons["photo.close"].exists)
+        app.buttons["library.select"].tap()
+        XCTAssertFalse(photo.isSelected)
+        photo.tap()
+        XCTAssertTrue(app.buttons["photo.close"].waitForExistence(timeout: 5))
+    }
+
     func testEmptyFolderDeletionCanBeCancelledAndConfirmed() {
         let name = "UITest-Delete-" + UUID().uuidString
         app.buttons["文件夹"].tap()
@@ -433,6 +449,17 @@ final class PlayitUITests: XCTestCase {
         let playPause = app.buttons["player.playPause"]
         expectation(for: NSPredicate(format: "label == %@", "播放"), evaluatedWith: playPause)
         waitForExpectations(timeout: 5)
+    }
+
+    func testPausedQuickCaptureOpensFrameSheet() {
+        openVideo("sample-motion.mp4")
+        app.buttons["player.nextFrame"].tap()
+        let quickCapture = app.buttons["player.quickCapture"]
+        XCTAssertTrue(quickCapture.waitForExistence(timeout: 10))
+        quickCapture.tap()
+        XCTAssertTrue(app.buttons["player.frame.saveFiles"].waitForExistence(timeout: 15))
+        app.buttons["player.frame.done"].tap()
+        XCTAssertTrue(quickCapture.waitForExistence(timeout: 5))
     }
 
     func testRateChipChangesSpeedInPlace() {

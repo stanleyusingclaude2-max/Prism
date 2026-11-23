@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Prism 隐私政策</title>
 <style>
-  :root { --bg:#ffffff; --text:#1c1c1e; --muted:#6e6e73; --line:#e5e5ea; --accent:#5b5bd6; }
-  @media (prefers-color-scheme: dark) { :root { --bg:#0e0e10; --text:#f2f2f7; --muted:#a1a1a6; --line:#2c2c2e; --accent:#9b9bff; } }
+  :root { --bg:#ffffff; --text:#1c1c1e; --muted:#6e6e73; --line:#e5e5ea; --accent:#176185; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#0e0e10; --text:#f2f2f7; --muted:#a1a1a6; --line:#2c2c2e; --accent:#9edcff; } }
   * { box-sizing:border-box; }
   body { margin:0; background:var(--bg); color:var(--text); font:16px/1.7 -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", sans-serif; }
   main { max-width:720px; margin:0 auto; padding:40px 16px 64px; }
@@ -34,7 +34,7 @@
   <li>不需要注册或登录，没有账号体系。</li>
   <li>不包含广告、数据分析、崩溃统计或任何第三方追踪 SDK。</li>
   <li>不会把你的视频、图片、观看记录或设备信息发送到开发者或任何第三方服务器。</li>
-  <li>不读取你的系统相册内容。</li>
+  <li>从相册导入时，Prism 仅接收你在系统选择器中确认的视频和图片。</li>
 </ul>
 
 <h2>保存在你设备上的数据</h2>
@@ -49,7 +49,7 @@
 <h2>App 请求的权限</h2>
 <ul>
   <li><strong>本地网络</strong>：仅在你打开“传文件”时使用。Prism 会在你的设备上开启一个只在同一 Wi-Fi 内可访问的接收服务，让电脑浏览器把文件直接传到手机。文件不经过任何外部服务器；关闭接收、离开页面或 App 进入后台时，服务即停止。</li>
-  <li><strong>添加到相册</strong>：仅在你主动选择“保存当前帧”到相册时使用，只写入，不读取相册。</li>
+  <li><strong>添加到相册</strong>：仅在你主动选择“保存当前帧”到相册时使用，该权限仅用于写入你要保存的帧。</li>
 </ul>
 
 <h2>儿童隐私</h2>
@@ -74,7 +74,7 @@
   <li>No sign-up or account is required.</li>
   <li>No advertising, analytics, crash reporting or third-party tracking SDKs.</li>
   <li>Your videos, images, viewing history and device information are never sent to the developer or any third-party server.</li>
-  <li>Prism does not read your Photos library.</li>
+  <li>When importing from Photos, Prism receives only the items you select in the system picker.</li>
 </ul>
 
 <h2>Data stored on your device</h2>
@@ -83,7 +83,7 @@
 <h2>Permissions</h2>
 <ul>
   <li><strong>Local Network</strong>: used only while Wi-Fi Transfer is on. Prism runs a receiver on your device that is reachable only from your local Wi-Fi network, so a browser on your computer can send files directly to your phone. Files never pass through an external server, and the receiver stops when you turn it off, leave the screen or the app goes to the background.</li>
-  <li><strong>Add to Photos</strong>: used only when you choose to save the current frame to Photos. Prism writes the image and never reads your library.</li>
+  <li><strong>Add to Photos</strong>: used only when you choose to save the current frame to Photos. This permission is used only to write the selected frame.</li>
 </ul>
 
 <h2>Children</h2>

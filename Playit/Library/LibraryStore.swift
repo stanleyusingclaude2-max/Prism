@@ -27,13 +27,32 @@ struct FolderRemoval: Equatable {
     let paths: Set<String>
 }
 
+private enum LibraryImportSource {
+    case file(URL)
+    case photo(NSItemProvider)
+
+    var displayName: String {
+        switch self {
+        case .file(let url): return url.lastPathComponent
+        case .photo(let provider): return provider.suggestedName ?? "相册素材"
+        }
+    }
+}
+
 private actor LibraryWorker {
     let repository: MediaLibraryRepository
 
     init(rootURL: URL) { repository = MediaLibraryRepository(rootURL: rootURL) }
     func scan() throws -> [MediaItem] { try repository.scan() }
-    func importFile(_ url: URL, into folder: String?) throws -> MediaItem {
-        try repository.importFile(from: url, into: folder)
+    func importItem(_ source: LibraryImportSource, into folder: String?) async throws {
+        switch source {
+        case .file(let url):
+            let scoped = url.startAccessingSecurityScopedResource()
+            defer { if scoped { url.stopAccessingSecurityScopedResource() } }
+            try repository.importFile(from: url, into: folder)
+        case .photo(let provider):
+            try await provider.importPhotoSelection(into: repository, folder: folder)
+        }
     }
 
     func importOpenedVideo(_ url: URL) throws {
@@ -204,18 +223,26 @@ final class LibraryStore: ObservableObject {
 
     func importFiles(_ urls: [URL]) async { await importFiles(urls, into: nil) }
 
+    func importPhotos(_ providers: [NSItemProvider], into folder: String?) async {
+        await enqueueImport(providers.map(LibraryImportSource.photo), into: folder)
+    }
+
+    func importFiles(_ urls: [URL], into folder: String?) async {
+        await enqueueImport(urls.map(LibraryImportSource.file), into: folder)
+    }
+
     /// Batches import one after another. A batch requested while another is
     /// still copying waits its turn: picking more files from "+" or the Transfer
     /// page, or opening a picture from the Files app, used to be dropped silently.
-    func importFiles(_ urls: [URL], into folder: String?) async {
-        guard !urls.isEmpty else { return }
+    private func enqueueImport(_ sources: [LibraryImportSource], into folder: String?) async {
+        guard !sources.isEmpty else { return }
         queuedImportBatches += 1
         isImporting = true
         let previous = importChain
         let batch = Task { [weak self] in
             await previous?.value
             guard let self else { return }
-            await performImport(urls, into: folder)
+            await performImport(sources, into: folder)
             queuedImportBatches -= 1
             if queuedImportBatches == 0 {
                 isImporting = false
@@ -226,15 +253,13 @@ final class LibraryStore: ObservableObject {
         await batch.value
     }
 
-    private func performImport(_ urls: [URL], into folder: String?) async {
+    private func performImport(_ sources: [LibraryImportSource], into folder: String?) async {
         var failures: [String] = []
-        for (index, url) in urls.enumerated() {
+        for (index, source) in sources.enumerated() {
             let waiting = queuedImportBatches - 1
-            importProgress = "正在导入 \(index + 1) / \(urls.count)" + (waiting > 0 ? "，另有 \(waiting) 批等待" : "")
-            let scoped = url.startAccessingSecurityScopedResource()
-            do { _ = try await worker.importFile(url, into: folder) }
-            catch { failures.append("\(url.lastPathComponent)：\(error.localizedDescription)") }
-            if scoped { url.stopAccessingSecurityScopedResource() }
+            importProgress = "正在导入 \(index + 1) / \(sources.count)" + (waiting > 0 ? "，另有 \(waiting) 批等待" : "")
+            do { try await worker.importItem(source, into: folder) }
+            catch { failures.append("\(source.displayName)：\(error.localizedDescription)") }
         }
         await refresh()
         if !failures.isEmpty { errorMessage = failures.joined(separator: "\n") }

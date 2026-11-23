@@ -126,7 +126,7 @@ struct TransferView: View {
                 VStack(alignment: .leading, spacing: 10) {
                     HStack(spacing: 12) {
                         DesignIcon(name: upload.state == .completed ? "IconCheck" : "IconFile", size: 22)
-                            .foregroundStyle(upload.state == .completed ? Theme.accent : Theme.muted)
+                            .foregroundStyle(upload.state == .completed ? Theme.success : Theme.muted)
                         VStack(alignment: .leading, spacing: 4) {
                             Text(upload.name).font(AppTypography.subheadline).lineLimit(2)
                             Text(upload.state == .completed ? "已存入媒体库" : upload.state == .failed ? upload.errorMessage ?? "传输失败，请在电脑重试" : MediaFormatting.bytes(upload.receivedBytes) + " / " + MediaFormatting.bytes(upload.totalBytes))

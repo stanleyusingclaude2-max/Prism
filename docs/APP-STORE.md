@@ -22,7 +22,7 @@
    ```
 4. 按 [DEVICE-ACCEPTANCE.md](DEVICE-ACCEPTANCE.md) 做真机验收。
 5. 完成 [LGPL-RELEASE-CHECKLIST.md](LGPL-RELEASE-CHECKLIST.md) 的第 1、3、4 步：确认打包的组件、保存对应源码、保存重新链接材料。
-6. 版本号：`MARKETING_VERSION`（现为 0.3.2）和 `CURRENT_PROJECT_VERSION`（Build，现为 16）写在 `scripts/generate-project.py` 里。每次上传的 Build 号必须比上一次大；改完运行 `python3 scripts/generate-project.py` 重新生成工程。
+6. 版本号：`MARKETING_VERSION`（现为 0.3.3）和 `CURRENT_PROJECT_VERSION`（Build，现为 17）写在 `scripts/generate-project.py` 里。每次上传的 Build 号必须比上一次大；改完运行 `python3 scripts/generate-project.py` 重新生成工程。
 7. Product → Archive，然后在 Organizer 里 Distribute App → App Store Connect。
 
 ## App Store Connect 里要填的

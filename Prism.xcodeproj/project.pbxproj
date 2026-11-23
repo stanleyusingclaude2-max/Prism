@@ -148,6 +148,16 @@
 			isa = "PBXBuildFile";
 			fileRef = 29829D6CEB232894C669BCCB;
 		};
+		53A770F6634DCC8D3AF2F139 = {
+			isa = "PBXFileReference";
+			lastKnownFileType = "sourcecode.swift";
+			path = "PhotoImportPicker.swift";
+			sourceTree = "<group>";
+		};
+		0A517965A042D5239FC30566 = {
+			isa = "PBXBuildFile";
+			fileRef = 53A770F6634DCC8D3AF2F139;
+		};
 		4BCCEEE8B754F60D46BA9A72 = {
 			isa = "PBXFileReference";
 			lastKnownFileType = "sourcecode.swift";
@@ -165,6 +175,7 @@
 				37BFBE91012DC8F1E50E6F72,
 				7E9E39DAE79BFC68F4B24414,
 				29829D6CEB232894C669BCCB,
+				53A770F6634DCC8D3AF2F139,
 				4BCCEEE8B754F60D46BA9A72,
 			);
 			path = "Library";
@@ -641,6 +652,7 @@
 				0E701BC5C694ECB991D3B313,
 				DAF35DAFE44324767047EEAA,
 				BF525236CA305ADE7C4CCCFF,
+				0A517965A042D5239FC30566,
 				CD6F4DE6BE73187E6B15DDE2,
 				A63A4C2B53D12DBF22A36CCD,
 				B007AF375728A21A686E4B7D,
@@ -793,7 +805,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = "AccentColor";
 				CODE_SIGN_STYLE = "Automatic";
-				CURRENT_PROJECT_VERSION = "16";
+				CURRENT_PROJECT_VERSION = "17";
 				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = "YES";
 				GENERATE_INFOPLIST_FILE = "NO";
@@ -803,7 +815,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = "0.3.2";
+				MARKETING_VERSION = "0.3.3";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.playit.app";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -822,7 +834,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = "AccentColor";
 				CODE_SIGN_STYLE = "Automatic";
-				CURRENT_PROJECT_VERSION = "16";
+				CURRENT_PROJECT_VERSION = "17";
 				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = "YES";
 				GENERATE_INFOPLIST_FILE = "NO";
@@ -832,7 +844,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = "0.3.2";
+				MARKETING_VERSION = "0.3.3";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.playit.app";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -860,7 +872,7 @@
 			isa = "XCBuildConfiguration";
 			buildSettings = {
 				CODE_SIGN_STYLE = "Automatic";
-				CURRENT_PROJECT_VERSION = "16";
+				CURRENT_PROJECT_VERSION = "17";
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = "YES";
 				IPHONEOS_DEPLOYMENT_TARGET = "17.0";
@@ -869,7 +881,7 @@
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				MARKETING_VERSION = "0.3.2";
+				MARKETING_VERSION = "0.3.3";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.playit.app.uitests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -883,7 +895,7 @@
 			isa = "XCBuildConfiguration";
 			buildSettings = {
 				CODE_SIGN_STYLE = "Automatic";
-				CURRENT_PROJECT_VERSION = "16";
+				CURRENT_PROJECT_VERSION = "17";
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = "YES";
 				IPHONEOS_DEPLOYMENT_TARGET = "17.0";
@@ -892,7 +904,7 @@
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				MARKETING_VERSION = "0.3.2";
+				MARKETING_VERSION = "0.3.3";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.playit.app.uitests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
