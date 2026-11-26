@@ -396,7 +396,8 @@ struct VideoPlayerScreen: View {
                 PlaybackTimeRow(clock: controller.clock, duration: controller.duration,
                                 showsMilliseconds: !controller.isPlaying || controller.isScrubbing,
                                 highlighted: controller.isScrubbing,
-                                onCapture: showsQuickCapture ? controller.captureCurrentFrame : nil)
+                                showsCapture: showsQuickCapture,
+                                onCapture: { controller.captureCurrentFrame() })
                 timeline
                 transportRow(isLandscapeInterface: isLandscapeInterface)
             }
@@ -963,7 +964,10 @@ private struct PlaybackTimeRow: View {
     let duration: Double
     let showsMilliseconds: Bool
     let highlighted: Bool
-    let onCapture: (() -> Void)?
+    /// A ternary of a main-actor method and nil made the type checker give up
+    /// (Xcode 26: "failed to produce diagnostic"), so visibility is separate.
+    let showsCapture: Bool
+    let onCapture: @MainActor () -> Void
 
     var body: some View {
         HStack(spacing: 8) {
@@ -972,7 +976,7 @@ private struct PlaybackTimeRow: View {
                 .accessibilityIdentifier("player.currentTime")
                 .allowsHitTesting(false)
             Spacer(minLength: 0)
-            if let onCapture {
+            if showsCapture {
                 Button(action: onCapture) {
                     ViewThatFits(in: .horizontal) {
                         Label("保存此帧", systemImage: "camera").fixedSize()
