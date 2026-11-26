@@ -60,6 +60,26 @@ final class PlayitUITests: XCTestCase {
         XCTAssertTrue(app.buttons["photo.close"].waitForExistence(timeout: 5))
     }
 
+    /// The Simulator has no motion sensors; `-prism-demo-tilt` swings the mark
+    /// by itself. The screenshots are kept for checking the drawing.
+    func testPrismMarkFollowsTilt() {
+        app.terminate()
+        app.launchArguments = ["-prism-sample-media", "-prism-demo-tilt"]
+        app.launch()
+        let brand = app.buttons["library.brand"]
+        XCTAssertTrue(brand.waitForExistence(timeout: 15))
+        brand.tap()
+        XCTAssertTrue(app.buttons["about.done"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.descendants(matching: .any)["about.mark"].waitForExistence(timeout: 5))
+        for index in 0..<4 {
+            let shot = XCTAttachment(screenshot: app.screenshot())
+            shot.name = "about-mark-\(index)"
+            shot.lifetime = .keepAlways
+            add(shot)
+            Thread.sleep(forTimeInterval: 0.6)
+        }
+    }
+
     func testEmptyFolderDeletionCanBeCancelledAndConfirmed() {
         let name = "UITest-Delete-" + UUID().uuidString
         app.buttons["文件夹"].tap()

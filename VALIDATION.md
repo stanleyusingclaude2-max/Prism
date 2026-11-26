@@ -72,3 +72,17 @@ iOS 部分（SwiftUI、UIKit、MPVKit）仍未编译。需要在 Mac／iPhone �
 - 新增 UI 测试 `testSelectionModeSelectsFoldersAndSelectAllDeletesThem`（未运行）。
 
 `LibraryView` 的 SwiftUI 改动未编译，需要在 Mac 上确认，并按 [真机验收](docs/DEVICE-ACCEPTANCE.md) “文件库与导入”第 9 项操作一遍。
+
+## 长视频拖动与重力感应标志
+
+拖动：
+- 原因：长视频关键帧间隔长，精确定位慢（可达一秒），而拖动中的精确预览会让后续位置排队等待，画面停住。短视频精确定位快，所以只在长视频上出现。
+- `PlaybackSeekPolicy.preview`、`ExactSeekCost` 和 `PlaybackSeekCoordinator`（PlayitCore）加 18 个测试，全部通过。其中一个测试模拟长视频拖动（精确解码 0.8 秒、关键帧 30 毫秒）：修改后拖动中两帧之间最长不超过 0.1 秒；去掉“替换过时的精确解码”后同一测试失败，出现 0.75 秒的停顿。
+- `MPVEngine` 改为由协调器决定何时发送定位命令。mpv 对 seek 命令的回复先于这次定位的 `MPV_EVENT_SEEK`，所以只有回复之后的定位事件才算数，被替换的旧定位晚到的事件不会结束新的定位。这部分依赖 libmpv，只能在 iOS 上编译和验证。
+
+标志：
+- 先用网页 Canvas 按同样的路径、渐变和倾斜映射画出原型，静止状态与 `Design/PrismMark.svg` 对比一致，再写成 SwiftUI `Canvas`。
+- 新增 UI 测试 `testPrismMarkFollowsTilt`：调试版启动参数 `-prism-demo-tilt` 让标志自行摆动（模拟器没有运动传感器），在“关于”页截图保存到测试结果。
+
+需要在 iPhone 上确认：[真机验收](docs/DEVICE-ACCEPTANCE.md)“长视频拖动与重力感应标志”。
+

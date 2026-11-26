@@ -4,6 +4,7 @@ import UIKit
 /// The app version and the open-source notices that ship inside the app.
 struct AboutView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     static let contactEmail = "s7anleyzn@gmail.com"
 
@@ -17,6 +18,21 @@ struct AboutView: View {
     var body: some View {
         NavigationStack {
             List {
+                Section {
+                    VStack(spacing: 10) {
+                        PrismBrandMark(height: 96)
+                            .padding(.top, 8)
+                        Text("Prism").font(AppTypography.title2.weight(.semibold)).foregroundStyle(Theme.text)
+                        if !reduceMotion {
+                            Text("倾斜手机，看光在棱镜里流动").font(AppTypography.caption).foregroundStyle(Theme.muted)
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.bottom, 4)
+                    .listRowBackground(Color.clear)
+                    .accessibilityElement(children: .combine)
+                    .accessibilityIdentifier("about.mark")
+                }
                 Section {
                     LabeledContent("版本") {
                         Text(version).font(AppTypography.numeric(.body)).foregroundStyle(Theme.muted)

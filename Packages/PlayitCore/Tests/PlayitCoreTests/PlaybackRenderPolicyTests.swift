@@ -85,3 +85,42 @@ final class PlaybackRenderPolicyTests: XCTestCase {
         XCTAssertTrue(PlaybackSeekPolicy.usesExactSeek(commit: false, precisePreview: false, target: 1.2, renderedTime: 1))
     }
 }
+
+final class PlaybackSeekPreviewTests: XCTestCase {
+    func testFastFilesKeepTheirPreviewBehaviour() {
+        XCTAssertEqual(PlaybackSeekPolicy.preview(precise: true, exactSeeksAreSlow: false, target: 90, renderedTime: 1), .exact)
+        XCTAssertEqual(PlaybackSeekPolicy.preview(precise: false, exactSeeksAreSlow: false, target: 90, renderedTime: 1), .keyframe)
+        XCTAssertEqual(PlaybackSeekPolicy.preview(precise: false, exactSeeksAreSlow: false, target: 1.2, renderedTime: 1), .exact)
+    }
+
+    func testSlowFilesPreviewKeyframesAndLetSmallMovesWaitForRest() {
+        for precise in [true, false] {
+            XCTAssertEqual(PlaybackSeekPolicy.preview(precise: precise, exactSeeksAreSlow: true, target: 90, renderedTime: 1), .keyframe)
+            XCTAssertEqual(PlaybackSeekPolicy.preview(precise: precise, exactSeeksAreSlow: true, target: 1, renderedTime: 90), .keyframe)
+            XCTAssertEqual(PlaybackSeekPolicy.preview(precise: precise, exactSeeksAreSlow: true, target: 1.2, renderedTime: 1), .waitForRest)
+        }
+        XCTAssertEqual(PlaybackSeekPolicy.preview(precise: false, exactSeeksAreSlow: true, target: .nan, renderedTime: 1), .exact)
+    }
+
+    func testOnlySlowExactPreviewsAreReplaced() {
+        XCTAssertTrue(PlaybackSeekPolicy.replacesRunningSeek(runningIsExact: true, runningIsCommit: false, runningFor: 0.25, exactSeeksAreSlow: false))
+        XCTAssertTrue(PlaybackSeekPolicy.replacesRunningSeek(runningIsExact: true, runningIsCommit: false, runningFor: 0.01, exactSeeksAreSlow: true))
+        XCTAssertFalse(PlaybackSeekPolicy.replacesRunningSeek(runningIsExact: true, runningIsCommit: false, runningFor: 0.1, exactSeeksAreSlow: false))
+        XCTAssertFalse(PlaybackSeekPolicy.replacesRunningSeek(runningIsExact: false, runningIsCommit: false, runningFor: 5, exactSeeksAreSlow: true))
+        XCTAssertFalse(PlaybackSeekPolicy.replacesRunningSeek(runningIsExact: true, runningIsCommit: true, runningFor: 5, exactSeeksAreSlow: true))
+    }
+
+    func testExactSeekCostFollowsRecentDecodes() {
+        var cost = ExactSeekCost()
+        cost.record(seconds: 0.05, finished: true)
+        XCTAssertFalse(cost.isSlow)
+        cost.record(seconds: 0.1, finished: false)
+        XCTAssertFalse(cost.isSlow, "A seek replaced quickly proves nothing.")
+        cost.record(seconds: 0.9, finished: true)
+        XCTAssertTrue(cost.isSlow)
+        for _ in 0..<4 { cost.record(seconds: 0.04, finished: true) }
+        XCTAssertFalse(cost.isSlow, "A cold first decode wears off.")
+        cost.record(seconds: .nan, finished: true)
+        XCTAssertFalse(cost.isSlow)
+    }
+}

@@ -32,16 +32,7 @@ final class MPVEngine {
         case failed(String)
     }
 
-    private struct SeekRequest {
-        let id: UInt64
-        let target: Double
-        let session: UUID
-        let commit: Bool
-        let resume: Bool
-        let pauseRevision: UInt64
-        let exact: Bool
-        let requestedAt: TimeInterval
-    }
+    private typealias Seek = PlaybackSeekCoordinator.Seek
 
     private final class WakeupContext {
         weak var engine: MPVEngine?
@@ -56,9 +47,9 @@ final class MPVEngine {
     private var fileAccess: PlaybackFileAccess?
     private var loaded = false
     private var stopping = false
-    private var activeSeek: SeekRequest?
-    private var pendingSeek: SeekRequest?
-    private var activeSeekDidBegin = false
+    /// Which seek mpv is working on, which one waits, and how slow exact seeks are.
+    private var seeks = PlaybackSeekCoordinator()
+    private var seekSentAt: (id: UInt64, time: TimeInterval)?
     private var scrubSession: UUID?
     private var commandID: UInt64 = 100
     private var pauseRevision: UInt64 = 0
@@ -68,7 +59,6 @@ final class MPVEngine {
     private var desiredLooping = false
     private var desiredSubtitleScale: Double = 1
     private var refinePreview: DispatchWorkItem?
-    private var lastPreviewID: UInt64?
     private var frameExports: [UInt64: URL] = [:]
     private var startupTime: TimeInterval?
     private var latestPosition = Double.nan
@@ -156,6 +146,7 @@ final class MPVEngine {
         queue.async { [self] in
             if paused { pauseRevision &+= 1 }
             stepping = false
+            seeks.pictureMoved()
             if !paused, flag("eof-reached") {
                 command(["seek", "0", "absolute+exact"])
             }
@@ -167,7 +158,9 @@ final class MPVEngine {
         queue.async { [self] in
             cancelPreviewRefinement()
             scrubSession = session
-            pendingSeek = nil
+            // A seek mpv is already working on stays; its completion is drained.
+            seeks.dropWaiting()
+            seeks.pictureMoved()
             stepping = false
             setFlag("pause", true)
         }
@@ -177,7 +170,7 @@ final class MPVEngine {
         queue.async { [self] in
             cancelPreviewRefinement()
             scrubSession = nil
-            pendingSeek = nil
+            seeks.dropWaiting()
             // Drain any command already sent to mpv before issuing a newer one.
         }
     }
@@ -186,43 +179,74 @@ final class MPVEngine {
         queue.async { [self] in
             guard loaded, target.isFinite, session == scrubSession, !stopping else { return }
             cancelPreviewRefinement()
-            let exact = PlaybackSeekPolicy.usesExactSeek(commit: commit, precisePreview: precisePreview,
-                                                        target: target, renderedTime: latestPosition)
-            let request = makeSeek(target: target, session: session, commit: commit, resume: resume, exact: exact)
-            pendingSeek = request
-            if !exact {
-                lastPreviewID = request.id
-                let refine = DispatchWorkItem { [weak self] in
-                    guard let self, self.scrubSession == session, self.lastPreviewID == request.id else { return }
-                    self.cancelPreviewRefinement()
-                    self.pendingSeek = self.makeSeek(target: target, session: session, commit: false,
-                                                     resume: false, exact: true)
-                    self.dispatchNextSeek()
-                }
-                refinePreview = refine
-                queue.asyncAfter(deadline: .now() + PlaybackSeekPolicy.refinementDelay, execute: refine)
+            if commit {
+                submit(makeSeek(target: target, session: session, exact: true, commit: true, resume: resume))
+                return
             }
-            dispatchNextSeek()
+            // Files whose exact frames decode slowly (long GOPs, usually long
+            // videos) preview with keyframes; the rest keep exact previews.
+            switch PlaybackSeekPolicy.preview(precise: precisePreview, exactSeeksAreSlow: seeks.exactSeeksAreSlow,
+                                              target: target, renderedTime: latestPosition) {
+            case .exact:
+                submit(makeSeek(target: target, session: session, exact: true))
+            case .keyframe:
+                submit(makeSeek(target: target, session: session, exact: false))
+                scheduleRefinement(target: target, session: session)
+            case .waitForRest:
+                seeks.dropWaitingPreview()
+                scheduleRefinement(target: target, session: session)
+            }
         }
     }
 
-    private func makeSeek(target: Double, session: UUID, commit: Bool, resume: Bool, exact: Bool) -> SeekRequest {
+    /// Once the pointer rests, the preview becomes the exact frame.
+    private func scheduleRefinement(target: Double, session: UUID) {
+        let refine = DispatchWorkItem { [weak self] in
+            guard let self, self.scrubSession == session else { return }
+            self.refinePreview = nil
+            self.submit(self.makeSeek(target: target, session: session, exact: true))
+        }
+        refinePreview = refine
+        queue.asyncAfter(deadline: .now() + PlaybackSeekPolicy.refinementDelay, execute: refine)
+    }
+
+    private func makeSeek(target: Double, session: UUID, exact: Bool, commit: Bool = false, resume: Bool = false) -> Seek {
         commandID &+= 1
-        return SeekRequest(id: commandID, target: max(0, target), session: session, commit: commit, resume: resume,
-                           pauseRevision: pauseRevision, exact: exact, requestedAt: ProcessInfo.processInfo.systemUptime)
+        return Seek(id: commandID, target: max(0, target), session: session, exact: exact,
+                    commit: commit, resume: resume, pauseRevision: pauseRevision)
     }
 
     private func cancelPreviewRefinement() {
         refinePreview?.cancel()
         refinePreview = nil
-        lastPreviewID = nil
+    }
+
+    private func submit(_ seek: Seek) {
+        let previous = seeks.running
+        let action = seeks.submit(seek, now: ProcessInfo.processInfo.systemUptime)
+        if case .send? = action, let previous, let sent = seekSentAt, sent.id == previous.id {
+            let elapsed = (ProcessInfo.processInfo.systemUptime - sent.time) * 1_000
+            metrics.debug("Replaced an exact seek still decoding after \(elapsed, format: .fixed(precision: 0)) ms")
+        }
+        perform(action)
+    }
+
+    private func perform(_ action: PlaybackSeekCoordinator.Action?) {
+        switch action {
+        case .send(let seek)?: send(seek)
+        case .finish(let commit)?:
+            metrics.debug("Commit reused the exact frame on screen")
+            finishCommit(commit)
+        case nil: break
+        }
     }
 
     func stepFrame(_ direction: Int) {
         queue.async { [self] in
-            guard loaded, activeSeek == nil, !stopping else { return }
+            guard loaded, seeks.running == nil, !stopping else { return }
             pauseRevision &+= 1
             stepping = true
+            seeks.pictureMoved()
             setFlag("pause", true)
             // These commands use decoded video frames / real presentation timestamps,
             // including VFR. There is deliberately no seconds-per-frame approximation.
@@ -333,13 +357,16 @@ final class MPVEngine {
         }
     }
 
-    private func dispatchNextSeek() {
-        guard activeSeek == nil, let next = pendingSeek, handle != nil else { return }
-        pendingSeek = nil
-        activeSeek = next
-        activeSeekDidBegin = false
-        let target = String(format: "%.9f", locale: Locale(identifier: "en_US_POSIX"), next.target)
-        let result = command(["seek", target, next.exact ? "absolute+exact" : "absolute+keyframes"], userData: next.id)
+    /// Sending a seek while mpv still decodes an older one makes mpv abandon
+    /// the older one; the coordinator only does that for a slow exact preview.
+    private func send(_ seek: Seek) {
+        guard handle != nil else {
+            seeks.reset()
+            return
+        }
+        seekSentAt = (seek.id, ProcessInfo.processInfo.systemUptime)
+        let target = String(format: "%.9f", locale: Locale(identifier: "en_US_POSIX"), seek.target)
+        let result = command(["seek", target, seek.exact ? "absolute+exact" : "absolute+keyframes"], userData: seek.id)
         if result < 0 {
             failSeek("无法定位到所选画面：\(errorDescription(result))")
             return
@@ -347,36 +374,41 @@ final class MPVEngine {
         // A stalled decoder must not leave the UI permanently stuck in a dragging state.
         // This is a failure deadline, not an artificial preview throttle.
         queue.asyncAfter(deadline: .now() + 12) { [weak self] in
-            guard let self, self.activeSeek?.id == next.id else { return }
-            self.failActiveSeek("此位置解码耗时较长，请稍后重试或选择附近画面。")
+            guard let self, self.seeks.running?.id == seek.id else { return }
+            self.failRunningSeek("此位置解码耗时较长，请稍后重试或选择附近画面。")
         }
     }
 
     private func finishSeek() {
-        guard let completed = activeSeek, activeSeekDidBegin else { return }
-        activeSeek = nil
-        activeSeekDidBegin = false
-        let elapsed = (ProcessInfo.processInfo.systemUptime - completed.requestedAt) * 1_000
-        metrics.debug("Seek frame ready in \(elapsed, format: .fixed(precision: 0)) ms. Exact: \(completed.exact)")
-        if pendingSeek != nil {
-            dispatchNextSeek()
+        let now = ProcessInfo.processInfo.systemUptime
+        let result = seeks.playbackRestarted(now: now)
+        guard let finished = result.finished else { return }
+        if let sent = seekSentAt, sent.id == finished.id {
+            let elapsed = (now - sent.time) * 1_000
+            metrics.debug("Seek frame ready in \(elapsed, format: .fixed(precision: 0)) ms. Exact: \(finished.exact)")
+        }
+        if let next = result.next {
+            // A newer target was waiting; it supersedes the finished seek.
+            perform(next)
             return
         }
-        if completed.commit, completed.session == scrubSession {
-            let position = double("time-pos") ?? completed.target
-            let resume = completed.resume && completed.pauseRevision == pauseRevision
-            scrubSession = nil
-            setFlag("pause", !resume)
-            onEvent(.seekCommitted(completed.session, position, resume))
-        }
+        if finished.commit { finishCommit(finished) }
     }
 
-    private func failActiveSeek(_ message: String) {
-        guard let seek = activeSeek else { return }
-        if seek.session != scrubSession || (!seek.commit && pendingSeek != nil) {
-            activeSeek = nil
-            activeSeekDidBegin = false
-            dispatchNextSeek()
+    private func finishCommit(_ commit: Seek) {
+        guard commit.session == scrubSession else { return }
+        let position = double("time-pos") ?? commit.target
+        let resume = commit.resume && commit.pauseRevision == pauseRevision
+        scrubSession = nil
+        setFlag("pause", !resume)
+        if resume { seeks.pictureMoved() }
+        onEvent(.seekCommitted(commit.session, position, resume))
+    }
+
+    private func failRunningSeek(_ message: String) {
+        guard let running = seeks.running else { return }
+        if running.session != scrubSession || (!running.commit && seeks.waiting != nil) {
+            perform(seeks.abandonRunning(now: ProcessInfo.processInfo.systemUptime))
         } else {
             failSeek(message)
         }
@@ -384,10 +416,8 @@ final class MPVEngine {
 
     private func failSeek(_ message: String) {
         cancelPreviewRefinement()
-        activeSeek = nil
-        pendingSeek = nil
+        seeks.reset()
         scrubSession = nil
-        activeSeekDidBegin = false
         setFlag("pause", true)
         onEvent(.error(message))
     }
@@ -453,7 +483,8 @@ final class MPVEngine {
                 default: break
                 }
             case MPV_EVENT_SEEK:
-                if activeSeek != nil { activeSeekDidBegin = true }
+                // Counts only after mpv accepted the running seek's command.
+                seeks.seekStarted()
             case MPV_EVENT_PLAYBACK_RESTART:
                 if let startupTime {
                     let elapsed = (ProcessInfo.processInfo.systemUptime - startupTime) * 1_000
@@ -467,14 +498,16 @@ final class MPVEngine {
                     onEvent(.time(latestPosition))
                 }
             case MPV_EVENT_COMMAND_REPLY:
-                if frameExports[event.reply_userdata] != nil {
-                    finishFrameExport(id: event.reply_userdata, succeeded: event.error >= 0)
-                } else if event.error < 0 {
-                    if activeSeek?.id == event.reply_userdata {
-                        failActiveSeek("定位失败：\(errorDescription(event.error))")
-                    } else {
-                        onEvent(.error("播放操作失败：\(errorDescription(event.error))"))
-                    }
+                let id = event.reply_userdata
+                if frameExports[id] != nil {
+                    finishFrameExport(id: id, succeeded: event.error >= 0)
+                } else if event.error >= 0 {
+                    // mpv has queued this seek; its own seek event follows.
+                    _ = seeks.replied(id: id)
+                } else if seeks.running?.id == id {
+                    failRunningSeek("定位失败：\(errorDescription(event.error))")
+                } else if !seeks.isReplaced(id: id) {
+                    onEvent(.error("播放操作失败：\(errorDescription(event.error))"))
                 }
             case MPV_EVENT_END_FILE:
                 if let raw = event.data {
@@ -587,8 +620,7 @@ final class MPVEngine {
     private func shutdown() {
         cancelPreviewRefinement()
         loaded = false
-        pendingSeek = nil
-        activeSeek = nil
+        seeks.reset()
         scrubSession = nil
         if let handle {
             mpv_set_wakeup_callback(handle, nil, nil)

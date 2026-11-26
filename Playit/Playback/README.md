@@ -31,15 +31,30 @@ Sources consulted:
 
 1. `beginScrubbing()` records whether playback was running and pauses audio/video.
 2. `scrub(to:)` updates the UI position immediately and sends a seek request to
-   the serial decoder queue. There is at most **one in-flight seek** and **one
-   latest waiting target**. New waiting positions replace obsolete ones.
-   During a playing scrub, a large move can preview a nearby keyframe. After
-   120 ms without a newer target, the same position is refined exactly. Paused
-   inspection always uses exact preview.
-3. `endScrubbing(at:)` enqueues a final `seek <seconds> absolute+exact` request.
-4. Seek completion uses `MPV_EVENT_SEEK` followed by
-   `MPV_EVENT_PLAYBACK_RESTART`, not the earlier command-reply notification.
-5. Only after the final selected frame is decoded does the controller leave
+   the serial decoder queue. `PlaybackSeekCoordinator` (PlayitCore) keeps at
+   most **one in-flight seek** and **one latest waiting target**. New waiting
+   positions replace obsolete ones. During a playing scrub, a large move can
+   preview a nearby keyframe. After 120 ms without a newer target, the same
+   position is refined exactly. Paused inspection uses exact previews while
+   exact seeks are fast.
+3. Long videos usually have long GOPs, and an exact frame then means decoding
+   up to several hundred frames from the previous keyframe. `ExactSeekCost`
+   follows how long exact seeks take for the open file. Once they average
+   200 ms or more, every preview uses keyframes, a move smaller than 0.75 s
+   keeps the picture until the pointer rests, and a newer target replaces an
+   exact preview that is still decoding: mpv abandons a seek when the next one
+   arrives. Keyframe previews and final commits are never replaced, so the
+   picture keeps moving and the last target always lands.
+4. `endScrubbing(at:)` enqueues a final `seek <seconds> absolute+exact` request.
+   When that exact frame is already being decoded by a refinement, the
+   refinement becomes the commit; when it is already on screen, the commit
+   finishes without another decode.
+5. Seek completion uses `MPV_EVENT_SEEK` followed by
+   `MPV_EVENT_PLAYBACK_RESTART`. mpv replies to an async `seek` command when it
+   queues the seek, before the seek starts, so a seek event counts only after
+   the running command's reply. Events of a replaced seek arriving late cannot
+   complete the newer one.
+6. Only after the final selected frame is decoded does the controller leave
    scrubbing mode and restore the pre-drag playback state. An explicit pause
    or background transition invalidates a previously queued resume request.
 
