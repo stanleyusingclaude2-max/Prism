@@ -24,7 +24,12 @@ jobs:
       - name: Test Foundation package
         run: swift test --package-path "Packages/${{ matrix.package }}"
 
+  # The simulator UI tests take about 20 minutes, and this account runs one
+  # macOS job at a time: a second one waits 15 minutes and is cancelled. Pushes
+  # leave the macOS runner to "Build installable IPA"; run the UI tests from the
+  # Actions page ("Run workflow") or through a pull request.
   ios:
+    if: github.event_name != 'push'
     runs-on: macos-latest
     needs: core-tests
     timeout-minutes: 45
