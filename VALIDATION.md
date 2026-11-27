@@ -86,3 +86,8 @@ iOS 部分（SwiftUI、UIKit、MPVKit）仍未编译。需要在 Mac／iPhone �
 
 需要在 iPhone 上确认：[真机验收](docs/DEVICE-ACCEPTANCE.md)“长视频拖动与重力感应标志”。
 
+GitHub Actions 上的结果（Xcode 26.6，iOS 26.5 SDK）：
+- 0.3.3 原样编译失败：`VideoPlayerScreen.swift` 中“保存此帧”的调用处，类型检查器报 “failed to produce diagnostic for expression”。改为传入显示开关和 `@MainActor` 闭包后通过。
+- 模拟器 Debug 构建和 UI 测试编译通过；`testPrismMarkFollowsTilt` 通过，截图显示“关于”页标志随模拟倾斜变化，与网页原型一致。其余 20 多个 UI 测试仍按标识符找不到播放器按钮和新建文件夹输入框，是测试脚本在 iOS 26 上的老问题。
+- 提交 `d4fbcba` 的 Release 真机构建通过，生成 `Prism-0.3.3-17-unsigned.ipa`：版本 0.3.3（17），不含测试素材，链接 CoreMotion，调试用的 `-prism-demo-tilt` 未进入 Release，App 代码无警告。
+
